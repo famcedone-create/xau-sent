@@ -43,10 +43,10 @@ object MarketAnalyzer {
             fibonacci = fib,
             bullishFvgs = gaps.filter { it.bullish }.takeLast(4),
             bearishFvgs = gaps.filterNot { it.bullish }.takeLast(4),
-            support1 = pivots.first,
-            support2 = pivots.second,
-            resistance1 = pivots.third,
-            resistance2 = pivots.fourth,
+            support1 = pivots.getOrNull(0),
+            support2 = pivots.getOrNull(1),
+            resistance1 = pivots.getOrNull(2),
+            resistance2 = pivots.getOrNull(3),
             state = state
         )
     }
