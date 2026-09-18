@@ -44,33 +44,47 @@ object AiInsightClient {
 
     private fun payload(data: XauData) = JSONObject().apply {
         put("market", JSONObject().apply {
-            put("price", data.market?.candles?.lastOrNull()?.close ?: JSONObject.NULL)
+            val allMarkets = if (data.markets.isEmpty()) mapOf("5m" to data.market) else data.markets
+            allMarkets.forEach { (timeframe, market) -> put(timeframe, market?.let(::marketPayload) ?: JSONObject.NULL) }
+        })
+        put("flow", JSONObject().apply {
+            put("forexFactory5m", flowPayload(data.forexFactory5m)); put("forexFactory10m", flowPayload(data.forexFactory10m))
+            put("x5m", flowPayload(data.flowX5m)); put("x10m", flowPayload(data.flowX10m))
+        })
+    }
+
+    private fun marketPayload(market: MarketAnalysis) = JSONObject().apply {
+            put("price", market.candles.lastOrNull()?.close ?: JSONObject.NULL)
             put("candles", JSONArray().apply {
-                data.market?.candles?.takeLast(24)?.forEach { candle ->
+                market.candles.takeLast(24).forEach { candle ->
                     put(JSONObject().apply {
                         put("time", candle.time); put("open", candle.open)
                         put("high", candle.high); put("low", candle.low); put("close", candle.close)
                     })
                 }
             })
-            put("trend", data.market?.trend ?: JSONObject.NULL)
-            put("state", data.market?.state ?: JSONObject.NULL)
-            put("resistance1", data.market?.resistance1 ?: JSONObject.NULL)
-            put("support1", data.market?.support1 ?: JSONObject.NULL)
-            put("fvgSell", data.market?.bearishFvgs?.lastOrNull()?.let(::gapToJson) ?: JSONObject.NULL)
-            put("fvgBuy", data.market?.bullishFvgs?.lastOrNull()?.let(::gapToJson) ?: JSONObject.NULL)
-        })
-        put("forexFactory", JSONObject().apply {
-            put("buyPct", data.buyPct); put("sellPct", data.sellPct)
-            put("buyEntries", data.buyEntries); put("sellEntries", data.sellEntries)
-            put("sample", data.sample)
-        })
-        put("flowX", JSONObject().apply {
-            put("status", data.flowX.status); put("buyPct", data.flowX.buyPct); put("sellPct", data.flowX.sellPct)
-            put("buyEntries", data.flowX.buyEntries); put("sellEntries", data.flowX.sellEntries)
-            put("totalPosts", data.flowX.totalPosts); put("sample", data.flowX.sample)
-            put("accountsOk", data.flowX.accountsOk); put("timelinesOk", data.flowX.timelinesOk)
-        })
+            put("trend", market.trend); put("state", market.state)
+            put("resistance1", market.resistance1 ?: JSONObject.NULL); put("support1", market.support1 ?: JSONObject.NULL)
+            put("fvgSell", market.bearishFvgs.lastOrNull()?.let(::gapToJson) ?: JSONObject.NULL)
+            put("fvgBuy", market.bullishFvgs.lastOrNull()?.let(::gapToJson) ?: JSONObject.NULL)
+                val current = market.candles.lastOrNull()?.close
+                val previous = market.candles.dropLast(1).lastOrNull()?.close
+                put("momentum", if (current != null && previous != null) current - previous else JSONObject.NULL)
+                put("structure", market.state)
+                put("pricePosition", current?.let { pricePosition(it, market) } ?: JSONObject.NULL)
+    }
+
+            private fun pricePosition(price: Double, market: MarketAnalysis): String = when {
+            price > market.channelHigh -> "sopra canale"
+            price < market.channelLow -> "sotto canale"
+            market.resistance1 != null && price >= market.resistance1 -> "vicino resistenza"
+            market.support1 != null && price <= market.support1 -> "vicino supporto"
+            else -> "nel canale"
+            }
+
+    private fun flowPayload(flow: FlowSummary) = JSONObject().apply {
+        put("status", flow.status); put("buyPct", flow.buyPct); put("sellPct", flow.sellPct)
+        put("buyEntries", flow.buyEntries); put("sellEntries", flow.sellEntries); put("events", flow.events); put("sample", flow.sample)
     }
 
     private fun gapToJson(gap: PriceGap) = JSONObject().apply {

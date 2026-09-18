@@ -14,7 +14,22 @@ data class XauData(
     val feedStatus: String,
     val flowX: XFlowData = XFlowData("non disponibile"),
     val aiInsight: AiInsight = AiInsight(),
+    val markets: Map<String, MarketAnalysis> = emptyMap(),
+    val forexFactory5m: FlowSummary = FlowSummary(),
+    val forexFactory10m: FlowSummary = FlowSummary(),
+    val flowX5m: FlowSummary = FlowSummary(),
+    val flowX10m: FlowSummary = FlowSummary(),
     val updatedEpochMs: Long
+)
+
+data class FlowSummary(
+    val status: String = "nessun dato",
+    val buyPct: Int = 0,
+    val sellPct: Int = 0,
+    val buyEntries: Int = 0,
+    val sellEntries: Int = 0,
+    val events: Int = 0,
+    val sample: String = "--"
 )
 
 data class AiInsight(

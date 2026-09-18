@@ -55,6 +55,10 @@ object ForexFactoryClient {
                 val sell = dedup.count { it.direction == "SELL" }
                 val total = buy + sell
 
+                val now5 = dedup.filter { it.minutes <= 5 }
+                val five = summary(now5)
+                val ten = summary(dedup)
+
                 val buyPct = if (total == 0) 0 else (buy * 100.0 / total).roundToInt()
                 val sellPct = if (total == 0) 0 else 100 - buyPct
                 val flow = when {
@@ -86,6 +90,8 @@ object ForexFactoryClient {
                     sample = sample,
                     market = null,
                     feedStatus = "feed 5m non disponibile",
+                    forexFactory5m = five,
+                    forexFactory10m = ten,
                     updatedEpochMs = System.currentTimeMillis()
                 )
             } catch (t: Throwable) {
@@ -122,6 +128,23 @@ object ForexFactoryClient {
     }
 
     fun fmt(v: Double?): String = if (v == null) "--" else DecimalFormat("0.00").format(v)
+
+    private fun summary(entries: List<Entry>): FlowSummary {
+        val buy = entries.count { it.direction == "BUY" }
+        val sell = entries.count { it.direction == "SELL" }
+        val total = buy + sell
+        if (total == 0) return FlowSummary()
+        val buyPct = (buy * 100.0 / total).roundToInt()
+        return FlowSummary(
+            status = "attivo",
+            buyPct = buyPct,
+            sellPct = 100 - buyPct,
+            buyEntries = buy,
+            sellEntries = sell,
+            events = total,
+            sample = when { total >= 8 -> "campione buono"; total >= 4 -> "campione medio"; else -> "campione basso" }
+        )
+    }
 
     private data class Entry(val key: String, val direction: String, val minutes: Int, val price: Double?)
 }

@@ -27,9 +27,11 @@ object XGuestClient {
     private val tp = Regex("\\b(tp\\d*|take\\s*profit|target)\\b", RegexOption.IGNORE_CASE)
     private val twitterDate = SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy", Locale.US)
 
-    fun fetch(): XFlowData {
+    fun fetch(): XFlowData = fetchWindows().ten
+
+    fun fetchWindows(): XWindows {
         return try {
-            val session = createGuestSession() ?: return unavailable(0, 0)
+            val session = createGuestSession() ?: return unavailableWindows(0, 0)
             var accountsOk = 0
             var timelinesOk = 0
             val fetchedPosts = mutableListOf<XPost>()
@@ -45,26 +47,38 @@ object XGuestClient {
                     return@forEach
                 }
             }
-            if (timelinesOk == 0) return unavailable(accountsOk, timelinesOk)
+            if (timelinesOk == 0) return unavailableWindows(accountsOk, timelinesOk)
             val posts = dedupe(fetchedPosts)
             val latestXauPost = posts.maxOfOrNull { it.postedAt }
             val windowStart = System.currentTimeMillis() - 10 * 60_000L
-            summarize(
-                posts.filter { it.postedAt >= windowStart && it.postedAt <= System.currentTimeMillis() },
+            val recent = posts.filter { it.postedAt >= windowStart && it.postedAt <= System.currentTimeMillis() }
+            val ten = summarize(
+                recent,
                 accountsOk,
                 timelinesOk,
                 latestXauPost
             )
+            val five = summarizeFlow(recent.filter { it.postedAt >= System.currentTimeMillis() - 5 * 60_000L })
+            XWindows(five, ten)
         } catch (_: Throwable) {
-            unavailable(0, 0)
+            unavailableWindows(0, 0)
         }
     }
 
-    private fun unavailable(accountsOk: Int, timelinesOk: Int) = XFlowData(
-        status = "non disponibile",
-        accountsOk = accountsOk,
-        timelinesOk = timelinesOk
+    private fun unavailableWindows(accountsOk: Int, timelinesOk: Int) = XWindows(
+        FlowSummary(), XFlowData("non disponibile", accountsOk = accountsOk, timelinesOk = timelinesOk)
     )
+
+    private fun summarizeFlow(posts: List<XPost>): FlowSummary {
+        val buy = posts.count { it.isBuy && !it.isExit && !it.hasTp }
+        val sell = posts.count { it.isSell && !it.isExit && !it.hasTp }
+        val total = buy + sell
+        if (total == 0) return FlowSummary()
+        val buyPct = buy * 100 / total
+        return FlowSummary("attivo", buyPct, 100 - buyPct, buy, sell, total, when {
+            total >= 8 -> "campione buono"; total >= 4 -> "campione medio"; else -> "campione basso"
+        })
+    }
 
     private fun summarize(posts: List<XPost>, accountsOk: Int, timelinesOk: Int, latestXauPost: Long?): XFlowData {
         if (posts.isEmpty()) return XFlowData("nessun post", accountsOk = accountsOk, timelinesOk = timelinesOk, lastXauPostEpochMs = latestXauPost)
@@ -188,6 +202,7 @@ object XGuestClient {
     private fun tweetFeatures() = JSONObject().put("rweb_video_screen_enabled", false).put("rweb_cashtags_enabled", true).put("profile_label_improvements_pcf_label_in_post_enabled", true).put("responsive_web_profile_redirect_enabled", true).put("rweb_tipjar_consumption_enabled", true).put("verified_phone_label_enabled", false).put("creator_subscriptions_tweet_preview_api_enabled", true).put("responsive_web_graphql_timeline_navigation_enabled", true).put("premium_content_api_read_enabled", false).put("communities_web_enable_tweet_community_results_fetch", true).put("c9s_tweet_anatomy_moderator_badge_enabled", true).put("articles_preview_enabled", true).put("responsive_web_edit_tweet_api_enabled", true).put("graphql_is_translatable_rweb_tweet_is_translatable_enabled", true).put("view_counts_everywhere_api_enabled", true).put("longform_notetweets_consumption_enabled", true).put("longform_notetweets_rich_text_read_enabled", true).put("longform_notetweets_inline_media_enabled", true).put("freedom_of_speech_not_reach_fetch_enabled", true).put("standardized_nudges_misinfo", true).put("tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled", true).put("responsive_web_enhance_cards_enabled", false).put("responsive_web_graphql_exclude_directive_enabled", true)
 
     private data class GuestSession(val token: String, val cookie: String)
+    data class XWindows(val five: FlowSummary, val ten: XFlowData)
     private data class GqlUser(val id: String, val handle: String, val name: String)
     private data class TimelineResult(val valid: Boolean, val posts: List<XPost>)
     private data class XPost(val id: String, val postedAt: Long, val isBuy: Boolean, val isSell: Boolean, val isExit: Boolean, val hasTp: Boolean)

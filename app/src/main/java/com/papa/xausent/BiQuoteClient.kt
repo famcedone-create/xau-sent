@@ -6,10 +6,10 @@ import java.net.URL
 import java.time.Instant
 
 object BiQuoteClient {
-    private const val ENDPOINT = "https://biquote.io/api/XAUUSD/ohlc?interval=5m&limit=100"
+    private const val ENDPOINT = "https://biquote.io/api/XAUUSD/ohlc"
 
-    fun fetch(): MarketAnalysis {
-        val connection = (URL(ENDPOINT).openConnection() as HttpURLConnection).apply {
+    fun fetch(interval: String = "5m"): MarketAnalysis {
+        val connection = (URL("$ENDPOINT?interval=$interval&limit=100").openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             connectTimeout = 12000
             readTimeout = 12000

@@ -16,6 +16,9 @@ object XauStore {
             put("sample", data.sample); put("feedStatus", data.feedStatus); put("updated", data.updatedEpochMs)
             put("flowX", xFlowToJson(data.flowX))
             put("aiInsight", aiToJson(data.aiInsight))
+            put("markets", marketsToJson(data.markets))
+            put("ff5", flowToJson(data.forexFactory5m)); put("ff10", flowToJson(data.forexFactory10m))
+            put("x5", flowToJson(data.flowX5m)); put("x10", flowToJson(data.flowX10m))
             put("market", data.market?.let(::marketToJson) ?: JSONObject.NULL)
         }
         context.getSharedPreferences(PREF, Context.MODE_PRIVATE).edit().putString("data", json.toString()).apply()
@@ -32,7 +35,10 @@ object XauStore {
                     longPct = json.optionalInt("longPct"), shortPct = json.optionalInt("shortPct"),
                     sample = json.getString("sample"), market = json.optJSONObject("market")?.let(::marketFromJson),
                     feedStatus = json.optString("feedStatus", "feed 5m non disponibile"),
-                    flowX = xFlowFromJson(json), aiInsight = aiFromJson(json), updatedEpochMs = json.getLong("updated")
+                    flowX = xFlowFromJson(json), aiInsight = aiFromJson(json), markets = marketsFromJson(json),
+                    forexFactory5m = flowFromJson(json.optJSONObject("ff5")), forexFactory10m = flowFromJson(json.optJSONObject("ff10")),
+                    flowX5m = flowFromJson(json.optJSONObject("x5")), flowX10m = flowFromJson(json.optJSONObject("x10")),
+                    updatedEpochMs = json.getLong("updated")
                 )
             }
         } catch (_: Throwable) { null }
@@ -88,6 +94,30 @@ object XauStore {
             flow = ai.optString("flow", "..."), reading = ai.optString("reading", "..."),
             confidence = ai.optInt("confidence", 0).coerceIn(0, 100)
         )
+    }
+
+    private fun flowToJson(flow: FlowSummary) = JSONObject().apply {
+        put("status", flow.status); put("buyPct", flow.buyPct); put("sellPct", flow.sellPct)
+        put("buyEntries", flow.buyEntries); put("sellEntries", flow.sellEntries); put("events", flow.events); put("sample", flow.sample)
+    }
+
+    private fun flowFromJson(json: JSONObject?): FlowSummary = json?.let {
+        FlowSummary(it.optString("status", "nessun dato"), it.optInt("buyPct"), it.optInt("sellPct"), it.optInt("buyEntries"), it.optInt("sellEntries"), it.optInt("events"), it.optString("sample", "--"))
+    } ?: FlowSummary()
+
+    private fun marketsToJson(markets: Map<String, MarketAnalysis>) = JSONObject().apply {
+        markets.forEach { (key, value) -> put(key, marketToJson(value)) }
+    }
+
+    private fun marketsFromJson(json: JSONObject): Map<String, MarketAnalysis> {
+        val result = mutableMapOf<String, MarketAnalysis>()
+        val markets = json.optJSONObject("markets") ?: return result
+        val keys = markets.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            markets.optJSONObject(key)?.let { result[key] = marketFromJson(it) }
+        }
+        return result
     }
 
     private fun gapsToJson(gaps: List<PriceGap>) = JSONArray().apply { gaps.forEach { put(JSONObject().apply { put("bullish", it.bullish); put("low", it.low); put("high", it.high); put("start", it.startIndex); put("end", it.endIndex) }) } }
