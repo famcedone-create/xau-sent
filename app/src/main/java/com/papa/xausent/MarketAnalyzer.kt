@@ -5,8 +5,9 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 object MarketAnalyzer {
-    fun analyze(input: List<Candle>): MarketAnalysis {
+    fun analyze(input: List<Candle>, displayCandles: List<Candle> = input): MarketAnalysis {
         val candles = input.takeLast(96)
+        val chartCandles = displayCandles.takeLast(96)
         val closes = candles.map { it.close }
         val regression = regression(closes)
         val residuals = closes.mapIndexed { index, close -> close - (regression.first + regression.second * index) }
@@ -34,10 +35,10 @@ object MarketAnalyzer {
         }
         val pivots = pivotLevels(candles, current)
         return MarketAnalysis(
-            candles = candles,
             trend = trend,
-            upperTrendline = line(regression, deviation * 1.8),
-            lowerTrendline = line(regression, -deviation * 1.8),
+            candles = chartCandles,
+            upperTrendline = line(regression, deviation * 1.8, chartCandles.lastIndex),
+            lowerTrendline = line(regression, -deviation * 1.8, chartCandles.lastIndex),
             channelHigh = upper,
             channelLow = lower,
             fibonacci = fib,
@@ -60,8 +61,8 @@ object MarketAnalyzer {
         return yMean - slope * xMean to slope
     }
 
-    private fun line(regression: Pair<Double, Double>, offset: Double): Pair<Double, Double> =
-        regression.first + offset + regression.second * 0 to regression.first + offset + regression.second * 95
+    private fun line(regression: Pair<Double, Double>, offset: Double, lastIndex: Int): Pair<Double, Double> =
+        regression.first + offset + regression.second * 0 to regression.first + offset + regression.second * lastIndex
 
     private fun averageTrueRange(candles: List<Candle>): Double = candles.zipWithNext { previous, current ->
         maxOf(current.high - current.low, abs(current.high - previous.close), abs(current.low - previous.close))

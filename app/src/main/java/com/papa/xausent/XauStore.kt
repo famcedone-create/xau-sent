@@ -26,7 +26,7 @@ object XauStore {
                 XauData(json.getInt("buyPct"), json.getInt("sellPct"), json.getInt("buyEntries"), json.getInt("sellEntries"),
                     json.optionalDouble("price"), json.getString("flow"), json.optionalInt("longPct"), json.optionalInt("shortPct"),
                     json.getString("sample"), json.optJSONObject("market")?.let(::marketFromJson),
-                    json.optString("feedStatus", "feed 5m non configurato"), json.getLong("updated"))
+                    json.optString("feedStatus", "feed 5m non disponibile"), json.getLong("updated"))
             }
         } catch (_: Throwable) { null }
     }

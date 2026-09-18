@@ -75,7 +75,7 @@ class XauWidgetProvider : AppWidgetProvider() {
                 if (d != null) {
                     rv.setTextViewText(R.id.sentiment, "FLOW BUY ${d.buyPct}% | SELL ${d.sellPct}%")
                     rv.setTextViewText(R.id.entries, "Entrate BUY ${d.buyEntries} | SELL ${d.sellEntries}")
-                    rv.setTextViewText(R.id.flow, "FLOW TRADER 10m: ${d.flow}")
+                    rv.setTextViewText(R.id.flow, "FLOW TRADER 10m: ${d.flow} • ${d.sample}")
                     val market = d.market
                     rv.setTextViewText(R.id.trend, "TREND 5m: ${market?.trend ?: "--"}")
                     rv.setTextViewText(R.id.status, "STATO: ${market?.state ?: d.feedStatus}")

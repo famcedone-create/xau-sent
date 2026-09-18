@@ -69,9 +69,9 @@ object ForexFactoryClient {
                 val price = median(prices)
                 val positioning = parseGoldPositioning(doc.text())
                 val sample = when {
-                    total >= 8 -> "BUONO"
-                    total >= 4 -> "MEDIO"
-                    else -> "BASSO"
+                    total >= 8 -> "campione buono"
+                    total >= 4 -> "campione medio"
+                    else -> "campione basso"
                 }
 
                 return XauData(
@@ -85,7 +85,7 @@ object ForexFactoryClient {
                     shortPct = positioning?.second,
                     sample = sample,
                     market = null,
-                    feedStatus = "feed 5m non configurato",
+                    feedStatus = "feed 5m non disponibile",
                     updatedEpochMs = System.currentTimeMillis()
                 )
             } catch (t: Throwable) {

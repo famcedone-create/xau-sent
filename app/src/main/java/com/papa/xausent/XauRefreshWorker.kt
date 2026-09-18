@@ -10,8 +10,12 @@ class XauRefreshWorker(appContext: Context, params: WorkerParameters) : Coroutin
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
             val flow = ForexFactoryClient.fetch()
-            val market = OandaClient.fetch(applicationContext)
-            XauStore.save(applicationContext, flow.copy(market = market, feedStatus = if (market == null) "feed 5m non configurato" else "attivo"))
+            val market = try {
+                BiQuoteClient.fetch()
+            } catch (_: Throwable) {
+                null
+            }
+            XauStore.save(applicationContext, flow.copy(market = market, feedStatus = if (market == null) "feed 5m non disponibile" else "attivo"))
             XauWidgetProvider.updateAll(applicationContext)
             Result.success()
         } catch (_: Throwable) {

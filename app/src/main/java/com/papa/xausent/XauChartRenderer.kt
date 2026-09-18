@@ -17,7 +17,7 @@ object XauChartRenderer {
         for (index in 0..6) canvas.drawLine(left, top + (bottom - top) * index / 6f, right, top + (bottom - top) * index / 6f, grid)
         for (index in 0..8) canvas.drawLine(left + (right - left) * index / 8f, top, left + (right - left) * index / 8f, bottom, grid)
         if (market == null) {
-            canvas.drawText("5m feed non configurato", left, 210f, label)
+            canvas.drawText("feed 5m non disponibile", left, 210f, label)
             return bitmap
         }
         val min = market.candles.minOf { it.low }.coerceAtMost(market.fibonacci.minOrNull() ?: 0.0)
@@ -45,7 +45,7 @@ object XauChartRenderer {
             canvas.drawLine(x(index), y(candle.open), x(index) + scaleX * .65f, y(candle.open), candlePaint)
             canvas.drawLine(x(index), y(candle.close), x(index) + scaleX * .65f, y(candle.close), candlePaint)
         }
-        canvas.drawText("5m • OANDA", 44f, 22f, label)
+        canvas.drawText("5m • BiQuote", 44f, 22f, label)
         return bitmap
     }
 }

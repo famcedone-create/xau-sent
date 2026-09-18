@@ -84,7 +84,7 @@
         android:layout_height="110dp"
         android:layout_marginTop="4dp"
         android:scaleType="fitXY"
-        android:contentDescription="Grafico XAUUSD 5m OANDA" />
+            android:contentDescription="Grafico XAUUSD 5m BiQuote" />
 
     <TextView
         android:id="@+id/key_levels"

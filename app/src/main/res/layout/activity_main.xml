@@ -32,27 +32,6 @@
             android:layout_marginTop="24dp"
             android:text="AGGIORNA ORA" />
 
-        <EditText
-            android:id="@+id/oandaAccount"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:hint="Account ID OANDA"
-            android:inputType="text" />
-
-        <EditText
-            android:id="@+id/oandaToken"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Token API OANDA"
-            android:inputType="textPassword" />
-
-        <Button
-            android:id="@+id/buttonSaveConfig"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="SALVA CONFIGURAZIONE OANDA" />
-
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
