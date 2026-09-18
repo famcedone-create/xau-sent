@@ -1,47 +1,57 @@
 package com.papa.xausent
 
 import android.content.Context
+import org.json.JSONArray
+import org.json.JSONObject
 
 object XauStore {
     private const val PREF = "xau_sent"
 
-    fun save(context: Context, d: XauData) {
-        context.getSharedPreferences(PREF, Context.MODE_PRIVATE).edit()
-            .putInt("buyPct", d.buyPct)
-            .putInt("sellPct", d.sellPct)
-            .putInt("buyEntries", d.buyEntries)
-            .putInt("sellEntries", d.sellEntries)
-            .putLong("price", java.lang.Double.doubleToRawLongBits(d.price ?: Double.NaN))
-            .putLong("t1", java.lang.Double.doubleToRawLongBits(d.t1 ?: Double.NaN))
-            .putLong("t2", java.lang.Double.doubleToRawLongBits(d.t2 ?: Double.NaN))
-            .putString("flow", d.flow)
-            .putInt("longPct", d.longPct ?: -1)
-            .putInt("shortPct", d.shortPct ?: -1)
-            .putString("sample", d.sample)
-            .putLong("updated", d.updatedEpochMs)
-            .apply()
+    fun save(context: Context, data: XauData) {
+        val json = JSONObject().apply {
+            put("buyPct", data.buyPct); put("sellPct", data.sellPct)
+            put("buyEntries", data.buyEntries); put("sellEntries", data.sellEntries)
+            put("price", data.price ?: JSONObject.NULL); put("flow", data.flow)
+            put("longPct", data.longPct ?: JSONObject.NULL); put("shortPct", data.shortPct ?: JSONObject.NULL)
+            put("sample", data.sample); put("feedStatus", data.feedStatus); put("updated", data.updatedEpochMs)
+            put("market", data.market?.let(::marketToJson) ?: JSONObject.NULL)
+        }
+        context.getSharedPreferences(PREF, Context.MODE_PRIVATE).edit().putString("data", json.toString()).apply()
     }
 
     fun load(context: Context): XauData? {
-        val p = context.getSharedPreferences(PREF, Context.MODE_PRIVATE)
-        if (!p.contains("updated")) return null
-        fun readDouble(k: String): Double? {
-            val d = java.lang.Double.longBitsToDouble(p.getLong(k, java.lang.Double.doubleToRawLongBits(Double.NaN)))
-            return if (d.isNaN()) null else d
-        }
-        return XauData(
-            buyPct = p.getInt("buyPct", 0),
-            sellPct = p.getInt("sellPct", 0),
-            buyEntries = p.getInt("buyEntries", 0),
-            sellEntries = p.getInt("sellEntries", 0),
-            price = readDouble("price"),
-            t1 = readDouble("t1"),
-            t2 = readDouble("t2"),
-            flow = p.getString("flow", "--") ?: "--",
-            longPct = p.getInt("longPct", -1).takeIf { it >= 0 },
-            shortPct = p.getInt("shortPct", -1).takeIf { it >= 0 },
-            sample = p.getString("sample", "--") ?: "--",
-            updatedEpochMs = p.getLong("updated", 0)
-        )
+        val raw = context.getSharedPreferences(PREF, Context.MODE_PRIVATE).getString("data", null) ?: return null
+        return try {
+            JSONObject(raw).let { json ->
+                XauData(json.getInt("buyPct"), json.getInt("sellPct"), json.getInt("buyEntries"), json.getInt("sellEntries"),
+                    json.optionalDouble("price"), json.getString("flow"), json.optionalInt("longPct"), json.optionalInt("shortPct"),
+                    json.getString("sample"), json.optJSONObject("market")?.let(::marketFromJson),
+                    json.optString("feedStatus", "feed 5m non configurato"), json.getLong("updated"))
+            }
+        } catch (_: Throwable) { null }
     }
+
+    private fun marketToJson(market: MarketAnalysis) = JSONObject().apply {
+        put("candles", JSONArray().apply { market.candles.forEach { put(JSONObject().apply { put("time", it.time); put("open", it.open); put("high", it.high); put("low", it.low); put("close", it.close) }) } })
+        put("trend", market.trend); put("channelHigh", market.channelHigh); put("channelLow", market.channelLow)
+        put("fib", JSONArray(market.fibonacci)); put("state", market.state)
+        put("support1", market.support1 ?: JSONObject.NULL); put("support2", market.support2 ?: JSONObject.NULL)
+        put("resistance1", market.resistance1 ?: JSONObject.NULL); put("resistance2", market.resistance2 ?: JSONObject.NULL)
+        put("upper", JSONArray(listOf(market.upperTrendline.first, market.upperTrendline.second)))
+        put("lower", JSONArray(listOf(market.lowerTrendline.first, market.lowerTrendline.second)))
+        put("bullishFvgs", gapsToJson(market.bullishFvgs)); put("bearishFvgs", gapsToJson(market.bearishFvgs))
+    }
+
+    private fun marketFromJson(json: JSONObject): MarketAnalysis {
+        val candleArray = json.getJSONArray("candles")
+        val candles = (0 until candleArray.length()).map { candleArray.getJSONObject(it).let { c -> Candle(c.getLong("time"), c.getDouble("open"), c.getDouble("high"), c.getDouble("low"), c.getDouble("close")) } }
+        return MarketAnalysis(candles, json.getString("trend"), json.pair("upper"), json.pair("lower"), json.getDouble("channelHigh"), json.getDouble("channelLow"), json.doubleList("fib"), json.gaps("bullishFvgs"), json.gaps("bearishFvgs"), json.optionalDouble("support1"), json.optionalDouble("support2"), json.optionalDouble("resistance1"), json.optionalDouble("resistance2"), json.getString("state"))
+    }
+
+    private fun gapsToJson(gaps: List<PriceGap>) = JSONArray().apply { gaps.forEach { put(JSONObject().apply { put("bullish", it.bullish); put("low", it.low); put("high", it.high); put("start", it.startIndex); put("end", it.endIndex) }) } }
+    private fun JSONObject.optionalInt(key: String): Int? = if (isNull(key)) null else optInt(key)
+    private fun JSONObject.optionalDouble(key: String): Double? = if (isNull(key)) null else optDouble(key)
+    private fun JSONObject.doubleList(key: String): List<Double> { val array = getJSONArray(key); return (0 until array.length()).map { array.getDouble(it) } }
+    private fun JSONObject.pair(key: String): Pair<Double, Double> { val array = getJSONArray(key); return array.getDouble(0) to array.getDouble(1) }
+    private fun JSONObject.gaps(key: String): List<PriceGap> { val array = getJSONArray(key); return (0 until array.length()).map { val gap = array.getJSONObject(it); PriceGap(gap.getBoolean("bullish"), gap.getDouble("low"), gap.getDouble("high"), gap.getInt("start"), gap.getInt("end")) } }
 }

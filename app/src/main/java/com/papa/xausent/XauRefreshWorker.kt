@@ -9,8 +9,9 @@ import kotlinx.coroutines.withContext
 class XauRefreshWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
-            val data = ForexFactoryClient.fetch()
-            XauStore.save(applicationContext, data)
+            val flow = ForexFactoryClient.fetch()
+            val market = OandaClient.fetch(applicationContext)
+            XauStore.save(applicationContext, flow.copy(market = market, feedStatus = if (market == null) "feed 5m non configurato" else "attivo"))
             XauWidgetProvider.updateAll(applicationContext)
             Result.success()
         } catch (_: Throwable) {

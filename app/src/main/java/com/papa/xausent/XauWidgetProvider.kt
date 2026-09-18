@@ -70,16 +70,17 @@ class XauWidgetProvider : AppWidgetProvider() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 rv.setOnClickPendingIntent(R.id.refresh, pi)
-                rv.setImageViewBitmap(R.id.chart, XauChartRenderer.render())
+                rv.setImageViewBitmap(R.id.chart, XauChartRenderer.render(d?.market))
 
                 if (d != null) {
                     rv.setTextViewText(R.id.sentiment, "FLOW BUY ${d.buyPct}% | SELL ${d.sellPct}%")
                     rv.setTextViewText(R.id.entries, "Entrate BUY ${d.buyEntries} | SELL ${d.sellEntries}")
                     rv.setTextViewText(R.id.flow, "FLOW TRADER 10m: ${d.flow}")
-                    rv.setTextViewText(R.id.trend, "TREND 5m: rialzista")
-                    rv.setTextViewText(R.id.status, "STATO: nel canale")
-                    rv.setTextViewText(R.id.levels, "Resistenza 1: 2,668  |  Resistenza 2: 2,682\nSupporto 1: 2,646  |  Supporto 2: 2,631")
-                    rv.setTextViewText(R.id.fvg, "FVG  •  Ribassista: 2  |  Rialzista: 2")
+                    val market = d.market
+                    rv.setTextViewText(R.id.trend, "TREND 5m: ${market?.trend ?: "--"}")
+                    rv.setTextViewText(R.id.status, "STATO: ${market?.state ?: d.feedStatus}")
+                    rv.setTextViewText(R.id.levels, "Resistenza 1: ${fmt(market?.resistance1)}  |  Resistenza 2: ${fmt(market?.resistance2)}\nSupporto 1: ${fmt(market?.support1)}  |  Supporto 2: ${fmt(market?.support2)}")
+                    rv.setTextViewText(R.id.fvg, "FVG  •  Ribassista: ${market?.bearishFvgs?.size ?: 0}  |  Rialzista: ${market?.bullishFvgs?.size ?: 0}")
                     val sdf = SimpleDateFormat("HH:mm", Locale.ITALY)
                     rv.setTextViewText(R.id.updated, "Agg.: ${sdf.format(Date(d.updatedEpochMs))}  • FLOW TRADER 10m${if (loading) "  • aggiornamento..." else ""}")
                 } else {
@@ -88,5 +89,7 @@ class XauWidgetProvider : AppWidgetProvider() {
                 manager.updateAppWidget(id, rv)
             }
         }
+
+        private fun fmt(value: Double?): String = value?.let { "%.2f".format(Locale.ITALY, it) } ?: "--"
     }
 }

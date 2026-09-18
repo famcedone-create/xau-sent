@@ -54,10 +54,9 @@ object ForexFactoryClient {
                 val buy = dedup.count { it.direction == "BUY" }
                 val sell = dedup.count { it.direction == "SELL" }
                 val total = buy + sell
-                if (total == 0) continue
 
-                val buyPct = (buy * 100.0 / total).roundToInt()
-                val sellPct = 100 - buyPct
+                val buyPct = if (total == 0) 0 else (buy * 100.0 / total).roundToInt()
+                val sellPct = if (total == 0) 0 else 100 - buyPct
                 val flow = when {
                     buyPct >= 60 -> "BUY"
                     sellPct >= 60 -> "SELL"
@@ -68,7 +67,6 @@ object ForexFactoryClient {
                     entries.mapNotNullTo(prices) { it.price }
                 }
                 val price = median(prices)
-                val (t1, t2) = targets(price, flow)
                 val positioning = parseGoldPositioning(doc.text())
                 val sample = when {
                     total >= 8 -> "BUONO"
@@ -82,12 +80,12 @@ object ForexFactoryClient {
                     buyEntries = buy,
                     sellEntries = sell,
                     price = price,
-                    t1 = t1,
-                    t2 = t2,
                     flow = flow,
                     longPct = positioning?.first,
                     shortPct = positioning?.second,
                     sample = sample,
+                    market = null,
+                    feedStatus = "feed 5m non configurato",
                     updatedEpochMs = System.currentTimeMillis()
                 )
             } catch (t: Throwable) {
@@ -108,12 +106,6 @@ object ForexFactoryClient {
         val s = values.sorted()
         val n = s.size
         return if (n % 2 == 1) s[n / 2] else (s[n / 2 - 1] + s[n / 2]) / 2.0
-    }
-
-    private fun targets(price: Double?, flow: String): Pair<Double?, Double?> {
-        if (price == null || flow == "NEUTRO") return null to null
-        val sign = if (flow == "BUY") 1.0 else -1.0
-        return (price + sign * 1.50) to (price + sign * 3.00)
     }
 
     private fun parseGoldPositioning(text: String): Pair<Int, Int>? {
