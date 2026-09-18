@@ -34,7 +34,7 @@ class XauWidgetProvider : AppWidgetProvider() {
         if (intent.action == ACTION_REFRESH) {
             refreshNow(context)
         } else if (intent.action in setOf(ACTION_1M, ACTION_5M, ACTION_15M)) {
-            setSelectedTimeframe(context, intent.action.removePrefix(ACTION_PREFIX))
+            setSelectedTimeframe(context, intent.action?.removePrefix(ACTION_PREFIX) ?: "5m")
             updateAll(context)
         }
     }

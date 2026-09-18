@@ -25,7 +25,7 @@ class XauRefreshWorker(appContext: Context, params: WorkerParameters) : Coroutin
                 price = null, flow = "non disponibile", longPct = null, shortPct = null,
                 sample = "--", market = null,
                 feedStatus = "feed 5m non disponibile", flowX = xWindows.ten,
-                markets = markets, flowX5m = xWindows.five, flowX10m = xWindows.ten,
+                markets = markets, flowX5m = xWindows.five, flowX10m = xWindows.tenSummary,
                 updatedEpochMs = System.currentTimeMillis()
             )
             val current = base.copy(
@@ -36,7 +36,7 @@ class XauRefreshWorker(appContext: Context, params: WorkerParameters) : Coroutin
                 forexFactory5m = base.forexFactory5m,
                 forexFactory10m = base.forexFactory10m,
                 flowX5m = xWindows.five,
-                flowX10m = xWindows.ten
+                flowX10m = xWindows.tenSummary
             )
             val withAi = if (manual) current.copy(aiInsight = AiInsightClient.fetch(applicationContext, current)) else current.copy(aiInsight = AiInsight())
             XauStore.save(applicationContext, withAi)
