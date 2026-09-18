@@ -85,6 +85,8 @@ class XauWidgetProvider : AppWidgetProvider() {
                     rv.setTextViewText(R.id.flow_x, xStatus)
                     rv.setTextViewText(R.id.flow_x_entries, "X Entrate: BUY ${x.buyEntries} | SELL ${x.sellEntries}")
                     rv.setTextViewText(R.id.flow_x_sample, "Campione X: ${x.sample}")
+                    rv.setTextViewText(R.id.flow_x_diagnostic, "X feed: account OK ${x.accountsOk}/6 • timeline OK ${x.timelinesOk}/6")
+                    rv.setTextViewText(R.id.flow_x_last, "ultimo post XAU trovato: ${ageMinutes(x.lastXauPostEpochMs)}")
                     val market = d.market
                     rv.setTextViewText(R.id.trend, "TREND 5m: ${market?.trend ?: "--"}")
                     rv.setTextViewText(R.id.status, "STATO: ${market?.state ?: d.feedStatus}")
@@ -101,5 +103,8 @@ class XauWidgetProvider : AppWidgetProvider() {
 
         private fun fmt(value: Double?): String = value?.let { "%.2f".format(Locale.ITALY, it) } ?: "--"
         private fun fmtGap(gap: PriceGap?): String = gap?.let { "${fmt(it.low)}–${fmt(it.high)}" } ?: "--"
+        private fun ageMinutes(epochMs: Long?): String = epochMs?.let {
+            "${((System.currentTimeMillis() - it).coerceAtLeast(0L) / 60_000L)}m fa"
+        } ?: "--"
     }
 }

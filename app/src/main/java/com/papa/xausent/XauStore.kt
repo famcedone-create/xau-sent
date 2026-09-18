@@ -53,11 +53,20 @@ object XauStore {
         put("status", flow.status); put("buyPct", flow.buyPct); put("sellPct", flow.sellPct)
         put("buyEntries", flow.buyEntries); put("sellEntries", flow.sellEntries)
         put("totalPosts", flow.totalPosts); put("sample", flow.sample)
+        put("accountsOk", flow.accountsOk); put("timelinesOk", flow.timelinesOk)
+        put("lastXauPost", flow.lastXauPostEpochMs ?: JSONObject.NULL)
     }
 
     private fun xFlowFromJson(json: JSONObject): XFlowData {
         val flow = json.optJSONObject("flowX") ?: return XFlowData("non disponibile")
-        return XFlowData(flow.optString("status", "non disponibile"), flow.optInt("buyPct"), flow.optInt("sellPct"), flow.optInt("buyEntries"), flow.optInt("sellEntries"), flow.optInt("totalPosts"), flow.optString("sample", "--"))
+        return XFlowData(
+            status = flow.optString("status", "non disponibile"),
+            buyPct = flow.optInt("buyPct"), sellPct = flow.optInt("sellPct"),
+            buyEntries = flow.optInt("buyEntries"), sellEntries = flow.optInt("sellEntries"),
+            totalPosts = flow.optInt("totalPosts"), sample = flow.optString("sample", "--"),
+            accountsOk = flow.optInt("accountsOk"), timelinesOk = flow.optInt("timelinesOk"),
+            lastXauPostEpochMs = if (flow.isNull("lastXauPost")) null else flow.optLong("lastXauPost")
+        )
     }
 
     private fun gapsToJson(gaps: List<PriceGap>) = JSONArray().apply { gaps.forEach { put(JSONObject().apply { put("bullish", it.bullish); put("low", it.low); put("high", it.high); put("start", it.startIndex); put("end", it.endIndex) }) } }

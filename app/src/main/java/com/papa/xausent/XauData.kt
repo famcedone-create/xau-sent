@@ -23,7 +23,10 @@ data class XFlowData(
     val buyEntries: Int = 0,
     val sellEntries: Int = 0,
     val totalPosts: Int = 0,
-    val sample: String = "--"
+    val sample: String = "--",
+    val accountsOk: Int = 0,
+    val timelinesOk: Int = 0,
+    val lastXauPostEpochMs: Long? = null
 )
 
 data class Candle(

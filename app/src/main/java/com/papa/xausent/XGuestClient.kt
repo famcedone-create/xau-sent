@@ -29,25 +29,45 @@ object XGuestClient {
 
     fun fetch(): XFlowData {
         return try {
-            val session = createGuestSession() ?: return unavailable()
-            val posts = dedupe(watchlist.flatMap { handle ->
+            val session = createGuestSession() ?: return unavailable(0, 0)
+            var accountsOk = 0
+            var timelinesOk = 0
+            val fetchedPosts = mutableListOf<XPost>()
+            watchlist.forEach { handle ->
                 try {
-                    val user = gqlUser(session, handle) ?: return@flatMap emptyList()
-                    gqlTweets(session, user)
+                    val user = gqlUser(session, handle) ?: return@forEach
+                    accountsOk += 1
+                    val timeline = gqlTweets(session, user)
+                    if (!timeline.valid) return@forEach
+                    timelinesOk += 1
+                    fetchedPosts += timeline.posts
                 } catch (_: Throwable) {
-                    emptyList()
+                    return@forEach
                 }
-            }).filter { it.postedAt >= System.currentTimeMillis() - 10 * 60_000L && it.postedAt <= System.currentTimeMillis() }
-            summarize(posts)
+            }
+            if (timelinesOk == 0) return unavailable(accountsOk, timelinesOk)
+            val posts = dedupe(fetchedPosts)
+            val latestXauPost = posts.maxOfOrNull { it.postedAt }
+            val windowStart = System.currentTimeMillis() - 10 * 60_000L
+            summarize(
+                posts.filter { it.postedAt >= windowStart && it.postedAt <= System.currentTimeMillis() },
+                accountsOk,
+                timelinesOk,
+                latestXauPost
+            )
         } catch (_: Throwable) {
-            unavailable()
+            unavailable(0, 0)
         }
     }
 
-    private fun unavailable() = XFlowData("non disponibile")
+    private fun unavailable(accountsOk: Int, timelinesOk: Int) = XFlowData(
+        status = "non disponibile",
+        accountsOk = accountsOk,
+        timelinesOk = timelinesOk
+    )
 
-    private fun summarize(posts: List<XPost>): XFlowData {
-        if (posts.isEmpty()) return XFlowData("nessun post")
+    private fun summarize(posts: List<XPost>, accountsOk: Int, timelinesOk: Int, latestXauPost: Long?): XFlowData {
+        if (posts.isEmpty()) return XFlowData("nessun post", accountsOk = accountsOk, timelinesOk = timelinesOk, lastXauPostEpochMs = latestXauPost)
         val buyEntries = posts.count { it.isBuy && !it.isExit && !it.hasTp }
         val sellEntries = posts.count { it.isSell && !it.isExit && !it.hasTp }
         val totalEntries = buyEntries + sellEntries
@@ -58,7 +78,7 @@ object XGuestClient {
             posts.size >= 4 -> "campione medio"
             else -> "campione basso"
         }
-        return XFlowData("attivo", buyPct, sellPct, buyEntries, sellEntries, posts.size, sample)
+        return XFlowData("attivo", buyPct, sellPct, buyEntries, sellEntries, posts.size, sample, accountsOk, timelinesOk, latestXauPost)
     }
 
     private fun dedupe(posts: List<XPost>): List<XPost> {
@@ -101,17 +121,21 @@ object XGuestClient {
         } finally { connection.disconnect() }
     }
 
-    private fun gqlTweets(session: GuestSession, user: GqlUser): List<XPost> {
+    private fun gqlTweets(session: GuestSession, user: GqlUser): TimelineResult {
         val variables = JSONObject()
             .put("userId", user.id).put("count", 12).put("includePromotedContent", false)
             .put("withQuickPromoteEligibilityTweetFields", true).put("withVoice", true).put("withV2Timeline", true)
         val url = "https://x.com/i/api/graphql/$TWEETS_QUERY/UserTweets?${query(variables, tweetFeatures())}"
         val connection = open(url, "GET", headers(session, "https://x.com/${user.handle}"))
         return try {
-            if (connection.responseCode !in 200..299) return emptyList()
+            if (connection.responseCode !in 200..299) return TimelineResult(false, emptyList())
+            val body = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+            if (body.optJSONObject("data") == null) return TimelineResult(false, emptyList())
             val out = mutableListOf<XPost>()
-            walk(JSONObject(connection.inputStream.bufferedReader().use { it.readText() }), out)
-            out
+            walk(body, out)
+            TimelineResult(true, out)
+        } catch (_: Throwable) {
+            TimelineResult(false, emptyList())
         } finally { connection.disconnect() }
     }
 
@@ -165,5 +189,6 @@ object XGuestClient {
 
     private data class GuestSession(val token: String, val cookie: String)
     private data class GqlUser(val id: String, val handle: String, val name: String)
+    private data class TimelineResult(val valid: Boolean, val posts: List<XPost>)
     private data class XPost(val id: String, val postedAt: Long, val isBuy: Boolean, val isSell: Boolean, val isExit: Boolean, val hasTp: Boolean)
 }

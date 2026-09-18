@@ -85,6 +85,22 @@
         android:textSize="11sp" />
 
     <TextView
+        android:id="@+id/flow_x_diagnostic"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="X feed: account OK 0/6 • timeline OK 0/6"
+        android:textColor="@color/text_muted"
+        android:textSize="10sp" />
+
+    <TextView
+        android:id="@+id/flow_x_last"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ultimo post XAU trovato: --"
+        android:textColor="@color/text_muted"
+        android:textSize="10sp" />
+
+    <TextView
         android:id="@+id/trend"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
