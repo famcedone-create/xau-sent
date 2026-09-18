@@ -28,25 +28,27 @@ object XGuestClient {
 
     fun fetchWindows(context: Context): XWindows {
         return try {
-            val watchlist = XWatchlistStore.load(context)
+            val watchlist = XWatchlistStore.active(context)
             val configured = watchlist.size
-            val session = createGuestSession() ?: return unavailableWindows(0, 0, configured)
+            val session = createGuestSession() ?: return unavailableWindows(0, 0, configured, watchlist.associateWith { "ERRORE" })
             var accountsOk = 0
             var timelinesOk = 0
+            val statuses = mutableMapOf<String, String>()
             val fetchedPosts = mutableListOf<XPost>()
             watchlist.forEach { handle ->
                 try {
-                    val user = gqlUser(session, handle) ?: return@forEach
+                    val user = gqlUser(session, handle) ?: run { statuses[handle] = "ERRORE"; return@forEach }
                     accountsOk += 1
                     val timeline = gqlTweets(session, user)
-                    if (!timeline.valid) return@forEach
+                    if (!timeline.valid) { statuses[handle] = "ERRORE"; return@forEach }
                     timelinesOk += 1
+                    statuses[handle] = "OK"
                     fetchedPosts += timeline.posts
                 } catch (_: Throwable) {
                     return@forEach
                 }
             }
-            if (timelinesOk == 0) return unavailableWindows(accountsOk, timelinesOk, configured)
+            if (timelinesOk == 0) return unavailableWindows(accountsOk, timelinesOk, configured, statuses)
             val posts = dedupe(fetchedPosts)
             val latestXauPost = posts.maxOfOrNull { it.postedAt }
             val windowStart = System.currentTimeMillis() - 10 * 60_000L
@@ -55,17 +57,17 @@ object XGuestClient {
                 recent,
                 accountsOk,
                 timelinesOk,
-                latestXauPost, configured
+                latestXauPost, configured, statuses
             )
             val five = summarizeFlow(recent.filter { it.postedAt >= System.currentTimeMillis() - 5 * 60_000L })
             XWindows(five, ten)
         } catch (_: Throwable) {
-            unavailableWindows(0, 0, XWatchlistStore.load(context).size)
+            unavailableWindows(0, 0, XWatchlistStore.active(context).size, emptyMap())
         }
     }
 
-    private fun unavailableWindows(accountsOk: Int, timelinesOk: Int, configured: Int) = XWindows(
-        FlowSummary(), XFlowData("non disponibile", accountsOk = accountsOk, timelinesOk = timelinesOk, accountsConfigured = configured)
+    private fun unavailableWindows(accountsOk: Int, timelinesOk: Int, configured: Int, statuses: Map<String, String>) = XWindows(
+        FlowSummary(), XFlowData("non disponibile", accountsOk = accountsOk, timelinesOk = timelinesOk, accountsConfigured = configured, accountStatuses = statuses)
     )
 
     private fun summarizeFlow(posts: List<XPost>): FlowSummary {
@@ -79,8 +81,8 @@ object XGuestClient {
         })
     }
 
-    private fun summarize(posts: List<XPost>, accountsOk: Int, timelinesOk: Int, latestXauPost: Long?, configured: Int): XFlowData {
-        if (posts.isEmpty()) return XFlowData("nessun post", accountsOk = accountsOk, timelinesOk = timelinesOk, accountsConfigured = configured, lastXauPostEpochMs = latestXauPost)
+    private fun summarize(posts: List<XPost>, accountsOk: Int, timelinesOk: Int, latestXauPost: Long?, configured: Int, statuses: Map<String, String>): XFlowData {
+        if (posts.isEmpty()) return XFlowData("nessun post", accountsOk = accountsOk, timelinesOk = timelinesOk, accountsConfigured = configured, accountStatuses = statuses, lastXauPostEpochMs = latestXauPost)
         val buyEntries = posts.count { it.isBuy && !it.isExit && !it.hasTp }
         val sellEntries = posts.count { it.isSell && !it.isExit && !it.hasTp }
         val totalEntries = buyEntries + sellEntries
@@ -91,7 +93,7 @@ object XGuestClient {
             posts.size >= 4 -> "campione medio"
             else -> "campione basso"
         }
-        return XFlowData("attivo", buyPct, sellPct, buyEntries, sellEntries, posts.size, sample, accountsOk, timelinesOk, configured, latestXauPost)
+        return XFlowData("attivo", buyPct, sellPct, buyEntries, sellEntries, posts.size, sample, accountsOk, timelinesOk, configured, statuses, latestXauPost)
     }
 
     private fun dedupe(posts: List<XPost>): List<XPost> {

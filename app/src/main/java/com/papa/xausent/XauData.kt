@@ -52,6 +52,7 @@ data class XFlowData(
     val accountsOk: Int = 0,
     val timelinesOk: Int = 0,
     val accountsConfigured: Int = 20,
+    val accountStatuses: Map<String, String> = emptyMap(),
     val lastXauPostEpochMs: Long? = null
 )
 
