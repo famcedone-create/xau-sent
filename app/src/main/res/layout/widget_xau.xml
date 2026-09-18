@@ -96,7 +96,7 @@
         android:id="@+id/flow_x_diagnostic"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="X feed: account OK 0/6 • timeline OK 0/6"
+        android:text="X feed: account OK 0/20 • timeline OK 0/20"
         android:textColor="@color/text_muted"
         android:textSize="10sp" />
 

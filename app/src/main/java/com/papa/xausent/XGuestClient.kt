@@ -1,5 +1,6 @@
 package com.papa.xausent
 
+import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -14,10 +15,6 @@ object XGuestClient {
     private const val BEARER = "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
     private const val USER_QUERY = "KybxDj9RrADIITXlGG8kpw"
     private const val TWEETS_QUERY = "jeAA-59Y9FL7FmjgBNIVPw"
-    private val watchlist = listOf(
-        "Team_XAUUSD", "EaconomySignals", "DanielGoldTrade",
-        "MARKE_TMASTER", "Prince_ict_smc", "TradingPulseFx"
-    )
     private val goldMark = Regex("\\b(xauusd[m]?|xau/usd|[$]xau|[$]gold|#xauusd|#gold|#xau)\\b", RegexOption.IGNORE_CASE)
     private val goldWord = Regex("\\b(gold|oro)\\b", RegexOption.IGNORE_CASE)
     private val tradeWord = Regex("\\b(buy|sell|long|short|entry|tp\\d*|take\\s*profit|sl|stop\\s*loss|exit|chiud|target)\\b", RegexOption.IGNORE_CASE)
@@ -27,11 +24,13 @@ object XGuestClient {
     private val tp = Regex("\\b(tp\\d*|take\\s*profit|target)\\b", RegexOption.IGNORE_CASE)
     private val twitterDate = SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy", Locale.US)
 
-    fun fetch(): XFlowData = fetchWindows().ten
+    fun fetch(context: Context): XFlowData = fetchWindows(context).ten
 
-    fun fetchWindows(): XWindows {
+    fun fetchWindows(context: Context): XWindows {
         return try {
-            val session = createGuestSession() ?: return unavailableWindows(0, 0)
+            val watchlist = XWatchlistStore.load(context)
+            val configured = watchlist.size
+            val session = createGuestSession() ?: return unavailableWindows(0, 0, configured)
             var accountsOk = 0
             var timelinesOk = 0
             val fetchedPosts = mutableListOf<XPost>()
@@ -47,7 +46,7 @@ object XGuestClient {
                     return@forEach
                 }
             }
-            if (timelinesOk == 0) return unavailableWindows(accountsOk, timelinesOk)
+            if (timelinesOk == 0) return unavailableWindows(accountsOk, timelinesOk, configured)
             val posts = dedupe(fetchedPosts)
             val latestXauPost = posts.maxOfOrNull { it.postedAt }
             val windowStart = System.currentTimeMillis() - 10 * 60_000L
@@ -56,17 +55,17 @@ object XGuestClient {
                 recent,
                 accountsOk,
                 timelinesOk,
-                latestXauPost
+                latestXauPost, configured
             )
             val five = summarizeFlow(recent.filter { it.postedAt >= System.currentTimeMillis() - 5 * 60_000L })
             XWindows(five, ten)
         } catch (_: Throwable) {
-            unavailableWindows(0, 0)
+            unavailableWindows(0, 0, XWatchlistStore.load(context).size)
         }
     }
 
-    private fun unavailableWindows(accountsOk: Int, timelinesOk: Int) = XWindows(
-        FlowSummary(), XFlowData("non disponibile", accountsOk = accountsOk, timelinesOk = timelinesOk)
+    private fun unavailableWindows(accountsOk: Int, timelinesOk: Int, configured: Int) = XWindows(
+        FlowSummary(), XFlowData("non disponibile", accountsOk = accountsOk, timelinesOk = timelinesOk, accountsConfigured = configured)
     )
 
     private fun summarizeFlow(posts: List<XPost>): FlowSummary {
@@ -80,8 +79,8 @@ object XGuestClient {
         })
     }
 
-    private fun summarize(posts: List<XPost>, accountsOk: Int, timelinesOk: Int, latestXauPost: Long?): XFlowData {
-        if (posts.isEmpty()) return XFlowData("nessun post", accountsOk = accountsOk, timelinesOk = timelinesOk, lastXauPostEpochMs = latestXauPost)
+    private fun summarize(posts: List<XPost>, accountsOk: Int, timelinesOk: Int, latestXauPost: Long?, configured: Int): XFlowData {
+        if (posts.isEmpty()) return XFlowData("nessun post", accountsOk = accountsOk, timelinesOk = timelinesOk, accountsConfigured = configured, lastXauPostEpochMs = latestXauPost)
         val buyEntries = posts.count { it.isBuy && !it.isExit && !it.hasTp }
         val sellEntries = posts.count { it.isSell && !it.isExit && !it.hasTp }
         val totalEntries = buyEntries + sellEntries
@@ -92,7 +91,7 @@ object XGuestClient {
             posts.size >= 4 -> "campione medio"
             else -> "campione basso"
         }
-        return XFlowData("attivo", buyPct, sellPct, buyEntries, sellEntries, posts.size, sample, accountsOk, timelinesOk, latestXauPost)
+        return XFlowData("attivo", buyPct, sellPct, buyEntries, sellEntries, posts.size, sample, accountsOk, timelinesOk, configured, latestXauPost)
     }
 
     private fun dedupe(posts: List<XPost>): List<XPost> {

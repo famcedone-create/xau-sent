@@ -33,6 +33,28 @@
             android:text="AGGIORNA ORA" />
 
         <TextView
+            android:id="@+id/xWatchlistTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="ACCOUNT X MONITORATI"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="#111111" />
+
+        <LinearLayout
+            android:id="@+id/xWatchlistContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <Button
+            android:id="@+id/buttonAddXAccount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="AGGIUNGI ACCOUNT X" />
+
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="28dp"

@@ -19,7 +19,7 @@ class XauRefreshWorker(appContext: Context, params: WorkerParameters) : Coroutin
                 try { interval to BiQuoteClient.fetch(interval) } catch (_: Throwable) { null }
             }.toMap()
             val market = markets["5m"]
-            val xWindows = XGuestClient.fetchWindows()
+            val xWindows = XGuestClient.fetchWindows(applicationContext)
             val base = flow ?: XauData(
                 buyPct = 0, sellPct = 0, buyEntries = 0, sellEntries = 0,
                 price = null, flow = "non disponibile", longPct = null, shortPct = null,

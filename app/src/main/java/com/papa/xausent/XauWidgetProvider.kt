@@ -104,7 +104,7 @@ class XauWidgetProvider : AppWidgetProvider() {
                     rv.setTextViewText(R.id.flow_x_entries, "X Entrate 5m: BUY ${xNow.buyEntries} | SELL ${xNow.sellEntries}")
                     rv.setTextViewText(R.id.flow_x_sample, "Campione X 5m: ${xNow.sample}")
                     rv.setTextViewText(R.id.flow_x_10, "X 10m: ${flowPercent(d.flowX10m)} • ${d.flowX10m.sample}")
-                    rv.setTextViewText(R.id.flow_x_diagnostic, "X feed: account OK ${x.accountsOk}/6 • timeline OK ${x.timelinesOk}/6")
+                    rv.setTextViewText(R.id.flow_x_diagnostic, "X feed: account OK ${x.accountsOk}/${x.accountsConfigured} • timeline OK ${x.timelinesOk}/${x.accountsConfigured}")
                     rv.setTextViewText(R.id.flow_x_last, "ultimo post XAU trovato: ${ageMinutes(x.lastXauPostEpochMs)}")
                     val market = d.market
                     rv.setTextViewText(R.id.trend, "TREND 5m: ${market?.trend ?: "--"}")

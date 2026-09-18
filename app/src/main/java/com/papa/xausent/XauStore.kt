@@ -66,6 +66,7 @@ object XauStore {
         put("buyEntries", flow.buyEntries); put("sellEntries", flow.sellEntries)
         put("totalPosts", flow.totalPosts); put("sample", flow.sample)
         put("accountsOk", flow.accountsOk); put("timelinesOk", flow.timelinesOk)
+        put("accountsConfigured", flow.accountsConfigured)
         put("lastXauPost", flow.lastXauPostEpochMs ?: JSONObject.NULL)
     }
 
@@ -77,6 +78,7 @@ object XauStore {
             buyEntries = flow.optInt("buyEntries"), sellEntries = flow.optInt("sellEntries"),
             totalPosts = flow.optInt("totalPosts"), sample = flow.optString("sample", "--"),
             accountsOk = flow.optInt("accountsOk"), timelinesOk = flow.optInt("timelinesOk"),
+            accountsConfigured = flow.optInt("accountsConfigured", XWatchlistStore.MAX_ACCOUNTS),
             lastXauPostEpochMs = if (flow.isNull("lastXauPost")) null else flow.optLong("lastXauPost")
         )
     }
