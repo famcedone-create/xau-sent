@@ -53,11 +53,20 @@ object XGuestClient {
             val latestXauPost = posts.maxOfOrNull { it.postedAt }
             val windowStart = System.currentTimeMillis() - 10 * 60_000L
             val recent = posts.filter { it.postedAt >= windowStart && it.postedAt <= System.currentTimeMillis() }
+            val stats = watchlist.associateWith { handle ->
+                val accountPosts = recent.filter { it.handle.equals(handle, ignoreCase = true) }
+                XAccountStats(
+                    lastXauPostEpochMs = accountPosts.maxOfOrNull { it.postedAt },
+                    buySignals = accountPosts.count { it.isBuy && !it.isExit && !it.hasTp },
+                    sellSignals = accountPosts.count { it.isSell && !it.isExit && !it.hasTp },
+                    status = statuses[handle] ?: "ERRORE"
+                )
+            }
             val ten = summarize(
                 recent,
                 accountsOk,
                 timelinesOk,
-                latestXauPost, configured, statuses
+                latestXauPost, configured, statuses, stats
             )
             val five = summarizeFlow(recent.filter { it.postedAt >= System.currentTimeMillis() - 5 * 60_000L })
             XWindows(five, ten)
@@ -81,8 +90,8 @@ object XGuestClient {
         })
     }
 
-    private fun summarize(posts: List<XPost>, accountsOk: Int, timelinesOk: Int, latestXauPost: Long?, configured: Int, statuses: Map<String, String>): XFlowData {
-        if (posts.isEmpty()) return XFlowData("nessun post", accountsOk = accountsOk, timelinesOk = timelinesOk, accountsConfigured = configured, accountStatuses = statuses, lastXauPostEpochMs = latestXauPost)
+    private fun summarize(posts: List<XPost>, accountsOk: Int, timelinesOk: Int, latestXauPost: Long?, configured: Int, statuses: Map<String, String>, stats: Map<String, XAccountStats>): XFlowData {
+        if (posts.isEmpty()) return XFlowData("nessun post", accountsOk = accountsOk, timelinesOk = timelinesOk, accountsConfigured = configured, accountStatuses = statuses, lastXauPostEpochMs = latestXauPost, accountStats = stats)
         val buyEntries = posts.count { it.isBuy && !it.isExit && !it.hasTp }
         val sellEntries = posts.count { it.isSell && !it.isExit && !it.hasTp }
         val totalEntries = buyEntries + sellEntries
@@ -93,7 +102,7 @@ object XGuestClient {
             posts.size >= 4 -> "campione medio"
             else -> "campione basso"
         }
-        return XFlowData("attivo", buyPct, sellPct, buyEntries, sellEntries, posts.size, sample, accountsOk, timelinesOk, configured, statuses, latestXauPost)
+        return XFlowData("attivo", buyPct, sellPct, buyEntries, sellEntries, posts.size, sample, accountsOk, timelinesOk, configured, statuses, latestXauPost, stats)
     }
 
     private fun dedupe(posts: List<XPost>): List<XPost> {
@@ -101,7 +110,7 @@ object XGuestClient {
         return posts.filter { seen.add(it.id) }
     }
 
-    private fun classify(id: String, text: String, postedAt: Long): XPost? {
+    private fun classify(id: String, text: String, postedAt: Long, handle: String): XPost? {
         val normalized = text.replace(Regex("\\s+"), " ").trim()
         if (normalized.isBlank()) return null
         val goldRelated = goldMark.containsMatchIn(normalized) ||
@@ -112,7 +121,7 @@ object XGuestClient {
         val hasTp = tp.containsMatchIn(normalized)
         val isExit = exit.containsMatchIn(normalized)
         if (!isBuy && !isSell && !isExit && !hasTp) return null
-        return XPost(id, postedAt, isBuy, isSell, isExit, hasTp)
+        return XPost(id, postedAt, isBuy, isSell, isExit, hasTp, handle)
     }
 
     private fun createGuestSession(): GuestSession? {
@@ -147,16 +156,16 @@ object XGuestClient {
             val body = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
             if (body.optJSONObject("data") == null) return TimelineResult(false, emptyList())
             val out = mutableListOf<XPost>()
-            walk(body, out)
+            walk(body, out, user.handle)
             TimelineResult(true, out)
         } catch (_: Throwable) {
             TimelineResult(false, emptyList())
         } finally { connection.disconnect() }
     }
 
-    private fun walk(value: Any?, out: MutableList<XPost>) {
+    private fun walk(value: Any?, out: MutableList<XPost>, handle: String) {
         when (value) {
-            is JSONArray -> for (i in 0 until value.length()) walk(value.opt(i), out)
+            is JSONArray -> for (i in 0 until value.length()) walk(value.opt(i), out, handle)
             is JSONObject -> {
                 val result = value.optJSONObject("result")
                 val tweet = when {
@@ -169,10 +178,10 @@ object XGuestClient {
                     val id = tweet.optString("rest_id", legacy.optString("id_str"))
                     val text = legacy.optString("full_text", legacy.optString("text"))
                     val created = parseTwitterDate(legacy.optString("created_at"))
-                    if (id.isNotBlank() && text.isNotBlank() && created != null) classify(id, text, created)?.let(out::add)
+                    if (id.isNotBlank() && text.isNotBlank() && created != null) classify(id, text, created, handle)?.let(out::add)
                 }
                 val keys = value.keys()
-                while (keys.hasNext()) walk(value.opt(keys.next()), out)
+                while (keys.hasNext()) walk(value.opt(keys.next()), out, handle)
             }
         }
     }
@@ -206,5 +215,5 @@ object XGuestClient {
     data class XWindows(val five: FlowSummary, val ten: XFlowData)
     private data class GqlUser(val id: String, val handle: String, val name: String)
     private data class TimelineResult(val valid: Boolean, val posts: List<XPost>)
-    private data class XPost(val id: String, val postedAt: Long, val isBuy: Boolean, val isSell: Boolean, val isExit: Boolean, val hasTp: Boolean)
+    private data class XPost(val id: String, val postedAt: Long, val isBuy: Boolean, val isSell: Boolean, val isExit: Boolean, val hasTp: Boolean, val handle: String)
 }

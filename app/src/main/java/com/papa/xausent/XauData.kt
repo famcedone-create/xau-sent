@@ -53,7 +53,15 @@ data class XFlowData(
     val timelinesOk: Int = 0,
     val accountsConfigured: Int = 20,
     val accountStatuses: Map<String, String> = emptyMap(),
-    val lastXauPostEpochMs: Long? = null
+    val lastXauPostEpochMs: Long? = null,
+    val accountStats: Map<String, XAccountStats> = emptyMap()
+)
+
+data class XAccountStats(
+    val lastXauPostEpochMs: Long? = null,
+    val buySignals: Int = 0,
+    val sellSignals: Int = 0,
+    val status: String = "ERRORE"
 )
 
 data class Candle(

@@ -68,6 +68,14 @@ object XauStore {
         put("accountsOk", flow.accountsOk); put("timelinesOk", flow.timelinesOk)
         put("accountsConfigured", flow.accountsConfigured)
         put("accountStatuses", JSONObject(flow.accountStatuses))
+        put("accountStats", JSONObject().apply {
+            flow.accountStats.forEach { (handle, stats) ->
+                put(handle, JSONObject().apply {
+                    put("last", stats.lastXauPostEpochMs ?: JSONObject.NULL)
+                    put("buy", stats.buySignals); put("sell", stats.sellSignals); put("status", stats.status)
+                })
+            }
+        })
         put("lastXauPost", flow.lastXauPostEpochMs ?: JSONObject.NULL)
     }
 
@@ -81,6 +89,7 @@ object XauStore {
             accountsOk = flow.optInt("accountsOk"), timelinesOk = flow.optInt("timelinesOk"),
             accountsConfigured = flow.optInt("accountsConfigured", XWatchlistStore.MAX_ACCOUNTS),
             accountStatuses = statusMap(flow.optJSONObject("accountStatuses")),
+            accountStats = statsMap(flow.optJSONObject("accountStats")),
             lastXauPostEpochMs = if (flow.isNull("lastXauPost")) null else flow.optLong("lastXauPost")
         )
     }
@@ -97,6 +106,22 @@ object XauStore {
         while (keys.hasNext()) {
             val key = keys.next()
             result[key] = json.optString(key, "ERRORE")
+        }
+        return result
+    }
+
+    private fun statsMap(json: JSONObject?): Map<String, XAccountStats> {
+        if (json == null) return emptyMap()
+        val result = mutableMapOf<String, XAccountStats>()
+        val keys = json.keys()
+        while (keys.hasNext()) {
+            val handle = keys.next()
+            val stats = json.optJSONObject(handle) ?: continue
+            result[handle] = XAccountStats(
+                lastXauPostEpochMs = if (stats.isNull("last")) null else stats.optLong("last"),
+                buySignals = stats.optInt("buy"), sellSignals = stats.optInt("sell"),
+                status = stats.optString("status", "ERRORE")
+            )
         }
         return result
     }
