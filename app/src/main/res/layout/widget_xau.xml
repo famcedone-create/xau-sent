@@ -2,7 +2,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="14dp"
+    android:padding="12dp"
     android:background="@drawable/widget_bg">
 
     <LinearLayout
@@ -16,10 +16,10 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="XAU SENT 10m"
+            android:text="XAUUSD Analisi 5m"
             android:textColor="@color/text_main"
             android:textStyle="bold"
-            android:textSize="16sp" />
+            android:textSize="15sp" />
 
         <TextView
             android:id="@+id/refresh"
@@ -35,56 +35,83 @@
         android:id="@+id/sentiment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="BUY --% | SELL --%"
+        android:text="FLOW BUY --% | SELL --%"
         android:textColor="@color/text_main"
         android:textStyle="bold"
-        android:textSize="20sp" />
+        android:textSize="17sp" />
 
     <TextView
         android:id="@+id/entries"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="Entrate: BUY -- | SELL --"
+        android:text="Entrate BUY -- | SELL --"
         android:textColor="@color/text_main"
-        android:textSize="14sp" />
-
-    <TextView
-        android:id="@+id/price"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="Prezzo indicativo: --"
-        android:textColor="@color/text_main"
-        android:textSize="14sp" />
-
-    <TextView
-        android:id="@+id/targets"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="T1: -- | T2: --"
-        android:textColor="@color/text_main"
-        android:textStyle="bold"
         android:textSize="14sp" />
 
     <TextView
         android:id="@+id/flow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:text="FLOW TRADER 10m: --"
+        android:textColor="@color/text_main"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/trend"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="Flow: --"
+        android:text="TREND 5m: --"
         android:textColor="@color/text_main"
         android:textStyle="bold"
         android:textSize="14sp" />
 
     <TextView
-        android:id="@+id/positioning"
+        android:id="@+id/status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:text="Posizionamento: LONG --% | SHORT --%"
+        android:layout_marginTop="4dp"
+        android:text="STATO: --"
+        android:textColor="@color/text_main"
+        android:textStyle="bold"
+        android:textSize="14sp" />
+
+    <ImageView
+        android:id="@+id/chart"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_marginTop="7dp"
+        android:scaleType="fitXY"
+        android:contentDescription="Grafico 5m mock" />
+
+    <TextView
+        android:id="@+id/key_levels"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="LIVELLI CHIAVE"
         android:textColor="@color/text_muted"
+        android:textStyle="bold"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/levels"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="Resistenza 1: --  |  Resistenza 2: --&#10;Supporto 1: --  |  Supporto 2: --"
+        android:textColor="@color/text_main"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/fvg"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="FVG  •  Ribassista: 2  |  Rialzista: 2"
+        android:textColor="@color/text_main"
         android:textSize="12sp" />
 
     <TextView
@@ -92,7 +119,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="3dp"
-        android:text="Agg.: --"
+        android:text="Agg.: --  •  FLOW TRADER 10m"
         android:textColor="@color/text_muted"
         android:textSize="11sp" />
 </LinearLayout>

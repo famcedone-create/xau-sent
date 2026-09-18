@@ -70,18 +70,18 @@ class XauWidgetProvider : AppWidgetProvider() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 rv.setOnClickPendingIntent(R.id.refresh, pi)
+                rv.setImageViewBitmap(R.id.chart, XauChartRenderer.render())
 
                 if (d != null) {
-                    rv.setTextViewText(R.id.sentiment, "BUY ${d.buyPct}% | SELL ${d.sellPct}%")
-                    rv.setTextViewText(R.id.entries, "Entrate: BUY ${d.buyEntries} | SELL ${d.sellEntries}")
-                    rv.setTextViewText(R.id.price, "Prezzo indicativo: ${ForexFactoryClient.fmt(d.price)}")
-                    rv.setTextViewText(R.id.targets, "T1: ${ForexFactoryClient.fmt(d.t1)} | T2: ${ForexFactoryClient.fmt(d.t2)}")
-                    rv.setTextViewText(R.id.flow, "Flow: ${d.flow}  • campione ${d.sample.lowercase()}")
-                    val lp = d.longPct?.toString() ?: "--"
-                    val sp = d.shortPct?.toString() ?: "--"
-                    rv.setTextViewText(R.id.positioning, "Posizionamento: LONG $lp% | SHORT $sp%")
+                    rv.setTextViewText(R.id.sentiment, "FLOW BUY ${d.buyPct}% | SELL ${d.sellPct}%")
+                    rv.setTextViewText(R.id.entries, "Entrate BUY ${d.buyEntries} | SELL ${d.sellEntries}")
+                    rv.setTextViewText(R.id.flow, "FLOW TRADER 10m: ${d.flow}")
+                    rv.setTextViewText(R.id.trend, "TREND 5m: rialzista")
+                    rv.setTextViewText(R.id.status, "STATO: nel canale")
+                    rv.setTextViewText(R.id.levels, "Resistenza 1: 2,668  |  Resistenza 2: 2,682\nSupporto 1: 2,646  |  Supporto 2: 2,631")
+                    rv.setTextViewText(R.id.fvg, "FVG  •  Ribassista: 2  |  Rialzista: 2")
                     val sdf = SimpleDateFormat("HH:mm", Locale.ITALY)
-                    rv.setTextViewText(R.id.updated, "Agg.: ${sdf.format(Date(d.updatedEpochMs))}${if (loading) "  • aggiornamento…" else ""}")
+                    rv.setTextViewText(R.id.updated, "Agg.: ${sdf.format(Date(d.updatedEpochMs))}  • FLOW TRADER 10m${if (loading) "  • aggiornamento..." else ""}")
                 } else {
                     rv.setTextViewText(R.id.updated, if (error) "Errore dati • tocca ↻" else "Tocca ↻ per aggiornare")
                 }
