@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.Data
 import androidx.work.WorkManager
 
 class MainActivity : Activity() {
@@ -17,7 +18,9 @@ class MainActivity : Activity() {
         val button = findViewById<Button>(R.id.buttonRefresh)
         button.setOnClickListener {
             status.text = "Sto aggiornando… poi puoi tornare alla schermata Home."
-            val req = OneTimeWorkRequestBuilder<XauRefreshWorker>().build()
+            val req = OneTimeWorkRequestBuilder<XauRefreshWorker>()
+                .setInputData(Data.Builder().putBoolean("manual_refresh", true).build())
+                .build()
             WorkManager.getInstance(this).enqueue(req)
         }
     }

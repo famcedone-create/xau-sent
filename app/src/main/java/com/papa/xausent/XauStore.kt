@@ -15,6 +15,7 @@ object XauStore {
             put("longPct", data.longPct ?: JSONObject.NULL); put("shortPct", data.shortPct ?: JSONObject.NULL)
             put("sample", data.sample); put("feedStatus", data.feedStatus); put("updated", data.updatedEpochMs)
             put("flowX", xFlowToJson(data.flowX))
+            put("aiInsight", aiToJson(data.aiInsight))
             put("market", data.market?.let(::marketToJson) ?: JSONObject.NULL)
         }
         context.getSharedPreferences(PREF, Context.MODE_PRIVATE).edit().putString("data", json.toString()).apply()
@@ -24,10 +25,15 @@ object XauStore {
         val raw = context.getSharedPreferences(PREF, Context.MODE_PRIVATE).getString("data", null) ?: return null
         return try {
             JSONObject(raw).let { json ->
-                XauData(json.getInt("buyPct"), json.getInt("sellPct"), json.getInt("buyEntries"), json.getInt("sellEntries"),
-                    json.optionalDouble("price"), json.getString("flow"), json.optionalInt("longPct"), json.optionalInt("shortPct"),
-                    json.getString("sample"), json.optJSONObject("market")?.let(::marketFromJson),
-                    json.optString("feedStatus", "feed 5m non disponibile"), xFlowFromJson(json), json.getLong("updated"))
+                XauData(
+                    buyPct = json.getInt("buyPct"), sellPct = json.getInt("sellPct"),
+                    buyEntries = json.getInt("buyEntries"), sellEntries = json.getInt("sellEntries"),
+                    price = json.optionalDouble("price"), flow = json.getString("flow"),
+                    longPct = json.optionalInt("longPct"), shortPct = json.optionalInt("shortPct"),
+                    sample = json.getString("sample"), market = json.optJSONObject("market")?.let(::marketFromJson),
+                    feedStatus = json.optString("feedStatus", "feed 5m non disponibile"),
+                    flowX = xFlowFromJson(json), aiInsight = aiFromJson(json), updatedEpochMs = json.getLong("updated")
+                )
             }
         } catch (_: Throwable) { null }
     }
@@ -66,6 +72,21 @@ object XauStore {
             totalPosts = flow.optInt("totalPosts"), sample = flow.optString("sample", "--"),
             accountsOk = flow.optInt("accountsOk"), timelinesOk = flow.optInt("timelinesOk"),
             lastXauPostEpochMs = if (flow.isNull("lastXauPost")) null else flow.optLong("lastXauPost")
+        )
+    }
+
+    private fun aiToJson(insight: AiInsight) = JSONObject().apply {
+        put("available", insight.available); put("structure", insight.structure); put("now", insight.now)
+        put("flow", insight.flow); put("reading", insight.reading); put("confidence", insight.confidence)
+    }
+
+    private fun aiFromJson(json: JSONObject): AiInsight {
+        val ai = json.optJSONObject("aiInsight") ?: return AiInsight()
+        return AiInsight(
+            available = ai.optBoolean("available", false),
+            structure = ai.optString("structure", "..."), now = ai.optString("now", "..."),
+            flow = ai.optString("flow", "..."), reading = ai.optString("reading", "..."),
+            confidence = ai.optInt("confidence", 0).coerceIn(0, 100)
         )
     }
 

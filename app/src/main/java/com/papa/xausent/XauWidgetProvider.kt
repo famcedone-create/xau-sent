@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit
 class XauWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         updateAll(context)
-        refreshNow(context)
+        refreshNow(context, manual = false)
     }
 
     override fun onEnabled(context: Context) {
@@ -39,9 +39,10 @@ class XauWidgetProvider : AppWidgetProvider() {
     companion object {
         const val ACTION_REFRESH = "com.papa.xausent.REFRESH"
 
-        fun refreshNow(context: Context) {
+        fun refreshNow(context: Context, manual: Boolean = true) {
             val req = OneTimeWorkRequestBuilder<XauRefreshWorker>()
                 .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .setInputData(androidx.work.Data.Builder().putBoolean("manual_refresh", manual).build())
                 .build()
             WorkManager.getInstance(context).enqueue(req)
             updateAll(context, loading = true)
@@ -92,6 +93,7 @@ class XauWidgetProvider : AppWidgetProvider() {
                     rv.setTextViewText(R.id.status, "STATO: ${market?.state ?: d.feedStatus}")
                     rv.setTextViewText(R.id.levels, "Resistenza 1: ${fmt(market?.resistance1)}  |  Supporto 1: ${fmt(market?.support1)}")
                     rv.setTextViewText(R.id.fvg, "FVG SELL: ${fmtGap(market?.bearishFvgs?.lastOrNull())}\nFVG BUY: ${fmtGap(market?.bullishFvgs?.lastOrNull())}")
+                    rv.setTextViewText(R.id.ai_insight, formatAi(d.aiInsight))
                     val sdf = SimpleDateFormat("HH:mm", Locale.ITALY)
                     rv.setTextViewText(R.id.updated, "Agg.: ${sdf.format(Date(d.updatedEpochMs))}  • FLOW TRADER 10m${if (loading) "  • aggiornamento..." else ""}")
                 } else {
@@ -106,5 +108,11 @@ class XauWidgetProvider : AppWidgetProvider() {
         private fun ageMinutes(epochMs: Long?): String = epochMs?.let {
             "${((System.currentTimeMillis() - it).coerceAtLeast(0L) / 60_000L)}m fa"
         } ?: "--"
+
+        private fun formatAi(insight: AiInsight): String = if (!insight.available) {
+            "LETTURA AI: non disponibile"
+        } else {
+            "LETTURA AI\nSTRUTTURA: ${insight.structure}\nNOW: ${insight.now}\nFLOW: ${insight.flow}\nLETTURA: ${insight.reading}\nCONF: ${insight.confidence}%"
+        }
     }
 }

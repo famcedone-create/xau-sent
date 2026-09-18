@@ -13,7 +13,17 @@ data class XauData(
     val market: MarketAnalysis?,
     val feedStatus: String,
     val flowX: XFlowData = XFlowData("non disponibile"),
+    val aiInsight: AiInsight = AiInsight(),
     val updatedEpochMs: Long
+)
+
+data class AiInsight(
+    val available: Boolean = false,
+    val structure: String = "...",
+    val now: String = "...",
+    val flow: String = "...",
+    val reading: String = "...",
+    val confidence: Int = 0
 )
 
 data class XFlowData(

@@ -9,6 +9,7 @@ import kotlinx.coroutines.withContext
 class XauRefreshWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
+            val manual = inputData.getBoolean("manual_refresh", false)
             val flow = try {
                 ForexFactoryClient.fetch()
             } catch (_: Throwable) {
@@ -27,11 +28,13 @@ class XauRefreshWorker(appContext: Context, params: WorkerParameters) : Coroutin
                 feedStatus = "feed 5m non disponibile", flowX = flowX,
                 updatedEpochMs = System.currentTimeMillis()
             )
-            XauStore.save(applicationContext, base.copy(
+            val current = base.copy(
                 market = market,
                 feedStatus = if (market == null) "feed 5m non disponibile" else "attivo",
                 flowX = flowX
-            ))
+            )
+            val withAi = if (manual) current.copy(aiInsight = AiInsightClient.fetch(applicationContext, current)) else current.copy(aiInsight = AiInsight())
+            XauStore.save(applicationContext, withAi)
             XauWidgetProvider.updateAll(applicationContext)
             Result.success()
         } catch (_: Throwable) {
