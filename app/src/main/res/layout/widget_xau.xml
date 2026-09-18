@@ -81,7 +81,7 @@
     <ImageView
         android:id="@+id/chart"
         android:layout_width="match_parent"
-        android:layout_height="110dp"
+        android:layout_height="180dp"
         android:layout_marginTop="4dp"
         android:scaleType="fitXY"
             android:contentDescription="Grafico XAUUSD 5m BiQuote" />
