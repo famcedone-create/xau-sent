@@ -12,7 +12,18 @@ data class XauData(
     val sample: String,
     val market: MarketAnalysis?,
     val feedStatus: String,
+    val flowX: XFlowData = XFlowData("non disponibile"),
     val updatedEpochMs: Long
+)
+
+data class XFlowData(
+    val status: String,
+    val buyPct: Int = 0,
+    val sellPct: Int = 0,
+    val buyEntries: Int = 0,
+    val sellEntries: Int = 0,
+    val totalPosts: Int = 0,
+    val sample: String = "--"
 )
 
 data class Candle(

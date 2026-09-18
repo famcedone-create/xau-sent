@@ -1,7 +1,7 @@
 <resources>
-    <color name="widget_bg">#F4F4F4</color>
-    <color name="text_main">#111111</color>
-    <color name="text_muted">#666666</color>
+    <color name="widget_bg">#D91B2226</color>
+    <color name="text_main">#FFFFFF</color>
+    <color name="text_muted">#D0D5D8</color>
     <color name="buy">#177A37</color>
     <color name="sell">#B3261E</color>
 </resources>

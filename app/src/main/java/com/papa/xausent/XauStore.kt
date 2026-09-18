@@ -14,6 +14,7 @@ object XauStore {
             put("price", data.price ?: JSONObject.NULL); put("flow", data.flow)
             put("longPct", data.longPct ?: JSONObject.NULL); put("shortPct", data.shortPct ?: JSONObject.NULL)
             put("sample", data.sample); put("feedStatus", data.feedStatus); put("updated", data.updatedEpochMs)
+            put("flowX", xFlowToJson(data.flowX))
             put("market", data.market?.let(::marketToJson) ?: JSONObject.NULL)
         }
         context.getSharedPreferences(PREF, Context.MODE_PRIVATE).edit().putString("data", json.toString()).apply()
@@ -26,7 +27,7 @@ object XauStore {
                 XauData(json.getInt("buyPct"), json.getInt("sellPct"), json.getInt("buyEntries"), json.getInt("sellEntries"),
                     json.optionalDouble("price"), json.getString("flow"), json.optionalInt("longPct"), json.optionalInt("shortPct"),
                     json.getString("sample"), json.optJSONObject("market")?.let(::marketFromJson),
-                    json.optString("feedStatus", "feed 5m non disponibile"), json.getLong("updated"))
+                    json.optString("feedStatus", "feed 5m non disponibile"), xFlowFromJson(json), json.getLong("updated"))
             }
         } catch (_: Throwable) { null }
     }
@@ -46,6 +47,17 @@ object XauStore {
         val candleArray = json.getJSONArray("candles")
         val candles = (0 until candleArray.length()).map { candleArray.getJSONObject(it).let { c -> Candle(c.getLong("time"), c.getDouble("open"), c.getDouble("high"), c.getDouble("low"), c.getDouble("close")) } }
         return MarketAnalysis(candles, json.getString("trend"), json.pair("upper"), json.pair("lower"), json.getDouble("channelHigh"), json.getDouble("channelLow"), json.doubleList("fib"), json.gaps("bullishFvgs"), json.gaps("bearishFvgs"), json.optionalDouble("support1"), json.optionalDouble("support2"), json.optionalDouble("resistance1"), json.optionalDouble("resistance2"), json.getString("state"))
+    }
+
+    private fun xFlowToJson(flow: XFlowData) = JSONObject().apply {
+        put("status", flow.status); put("buyPct", flow.buyPct); put("sellPct", flow.sellPct)
+        put("buyEntries", flow.buyEntries); put("sellEntries", flow.sellEntries)
+        put("totalPosts", flow.totalPosts); put("sample", flow.sample)
+    }
+
+    private fun xFlowFromJson(json: JSONObject): XFlowData {
+        val flow = json.optJSONObject("flowX") ?: return XFlowData("non disponibile")
+        return XFlowData(flow.optString("status", "non disponibile"), flow.optInt("buyPct"), flow.optInt("sellPct"), flow.optInt("buyEntries"), flow.optInt("sellEntries"), flow.optInt("totalPosts"), flow.optString("sample", "--"))
     }
 
     private fun gapsToJson(gaps: List<PriceGap>) = JSONArray().apply { gaps.forEach { put(JSONObject().apply { put("bullish", it.bullish); put("low", it.low); put("high", it.high); put("start", it.startIndex); put("end", it.endIndex) }) } }

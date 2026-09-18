@@ -76,11 +76,20 @@ class XauWidgetProvider : AppWidgetProvider() {
                     rv.setTextViewText(R.id.sentiment, "FLOW BUY ${d.buyPct}% | SELL ${d.sellPct}%")
                     rv.setTextViewText(R.id.entries, "Entrate BUY ${d.buyEntries} | SELL ${d.sellEntries}")
                     rv.setTextViewText(R.id.flow, "FLOW TRADER 10m: ${d.flow} • ${d.sample}")
+                    val x = d.flowX
+                    val xStatus = when (x.status) {
+                        "attivo" -> "FLOW X 10m: BUY ${x.buyPct}% | SELL ${x.sellPct}% • Post ${x.totalPosts}"
+                        "nessun post" -> "FLOW X 10m: nessun post"
+                        else -> "FLOW X 10m: non disponibile"
+                    }
+                    rv.setTextViewText(R.id.flow_x, xStatus)
+                    rv.setTextViewText(R.id.flow_x_entries, "X Entrate: BUY ${x.buyEntries} | SELL ${x.sellEntries}")
+                    rv.setTextViewText(R.id.flow_x_sample, "Campione X: ${x.sample}")
                     val market = d.market
                     rv.setTextViewText(R.id.trend, "TREND 5m: ${market?.trend ?: "--"}")
                     rv.setTextViewText(R.id.status, "STATO: ${market?.state ?: d.feedStatus}")
-                    rv.setTextViewText(R.id.levels, "Resistenza 1: ${fmt(market?.resistance1)}  |  Resistenza 2: ${fmt(market?.resistance2)}\nSupporto 1: ${fmt(market?.support1)}  |  Supporto 2: ${fmt(market?.support2)}")
-                    rv.setTextViewText(R.id.fvg, "FVG  •  Ribassista: ${market?.bearishFvgs?.size ?: 0}  |  Rialzista: ${market?.bullishFvgs?.size ?: 0}")
+                    rv.setTextViewText(R.id.levels, "Resistenza 1: ${fmt(market?.resistance1)}  |  Supporto 1: ${fmt(market?.support1)}")
+                    rv.setTextViewText(R.id.fvg, "FVG SELL: ${fmtGap(market?.bearishFvgs?.lastOrNull())}\nFVG BUY: ${fmtGap(market?.bullishFvgs?.lastOrNull())}")
                     val sdf = SimpleDateFormat("HH:mm", Locale.ITALY)
                     rv.setTextViewText(R.id.updated, "Agg.: ${sdf.format(Date(d.updatedEpochMs))}  • FLOW TRADER 10m${if (loading) "  • aggiornamento..." else ""}")
                 } else {
@@ -91,5 +100,6 @@ class XauWidgetProvider : AppWidgetProvider() {
         }
 
         private fun fmt(value: Double?): String = value?.let { "%.2f".format(Locale.ITALY, it) } ?: "--"
+        private fun fmtGap(gap: PriceGap?): String = gap?.let { "${fmt(it.low)}–${fmt(it.high)}" } ?: "--"
     }
 }

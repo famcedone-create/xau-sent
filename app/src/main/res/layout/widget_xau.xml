@@ -59,6 +59,32 @@
         android:textSize="11sp" />
 
     <TextView
+        android:id="@+id/flow_x"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:text="FLOW X 10m: non disponibile"
+        android:textColor="@color/text_main"
+        android:textStyle="bold"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/flow_x_entries"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="X Entrate: BUY 0 | SELL 0"
+        android:textColor="@color/text_muted"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/flow_x_sample"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Campione X: campione basso"
+        android:textColor="@color/text_muted"
+        android:textSize="11sp" />
+
+    <TextView
         android:id="@+id/trend"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -101,7 +127,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="1dp"
-        android:text="Resistenza 1: --  |  Resistenza 2: --&#10;Supporto 1: --  |  Supporto 2: --"
+        android:text="Resistenza 1: --  |  Supporto 1: --"
         android:textColor="@color/text_main"
         android:textSize="12sp" />
 
@@ -110,7 +136,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="3dp"
-        android:text="FVG  •  Ribassista: 2  |  Rialzista: 2"
+        android:text="FVG SELL: --&#10;FVG BUY: --"
         android:textColor="@color/text_main"
         android:textSize="12sp" />
 
