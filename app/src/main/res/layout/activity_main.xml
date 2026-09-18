@@ -1,0 +1,43 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="XAU SENT"
+            android:textStyle="bold"
+            android:textSize="28sp"
+            android:textColor="#111111" />
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Pronto. Premi AGGIORNA per leggere il flow XAU degli ultimi 10 minuti."
+            android:textSize="17sp"
+            android:textColor="#333333" />
+
+        <Button
+            android:id="@+id/buttonRefresh"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="24dp"
+            android:text="AGGIORNA ORA" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="Per aggiungere il widget: tieni premuto in un punto vuoto della schermata Home → Widget → XAU SENT → trascinalo sulla Home.\n\nIl tasto ↻ del widget aggiorna subito. L'aggiornamento automatico è circa ogni 15 minuti, come consentito da Android."
+            android:textSize="16sp"
+            android:textColor="#555555" />
+    </LinearLayout>
+</ScrollView>
