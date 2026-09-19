@@ -42,8 +42,8 @@ object XauChartRenderer {
             canvas.drawLine(scaleLeft, tickY, scaleRight, tickY, scaleLine)
             canvas.drawText(price(value), scaleRight, tickY + 7f, scaleLabel)
         }
-        val fvgBull = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(85, 64, 181, 133) }
-        val fvgBear = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(85, 221, 93, 93) }
+        val fvgBull = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(80, 47, 167, 216) }
+        val fvgBear = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(80, 108, 142, 217) }
         market.bullishFvgs.forEach { canvas.drawRect(x(it.startIndex), y(it.high), x(it.endIndex), y(it.low), fvgBull) }
         market.bearishFvgs.forEach { canvas.drawRect(x(it.startIndex), y(it.high), x(it.endIndex), y(it.low), fvgBear) }
         val fib = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeWidth = 2f; color = Color.argb(150, 238, 190, 93) }
@@ -55,12 +55,18 @@ object XauChartRenderer {
         val lower = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(75, 174, 156); strokeWidth = 4f }
         canvas.drawLine(x(0), y(market.upperTrendline.first), x(market.candles.lastIndex), y(market.upperTrendline.second), upper)
         canvas.drawLine(x(0), y(market.lowerTrendline.first), x(market.candles.lastIndex), y(market.lowerTrendline.second), lower)
-        val candlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeWidth = 3f }
+        val wickPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeWidth = 2f }
+        val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        val bodyWidth = (scaleX * .62f).coerceIn(7f, 18f)
         market.candles.forEachIndexed { index, candle ->
-            candlePaint.color = if (candle.close >= candle.open) Color.rgb(75, 174, 156) else Color.rgb(221, 93, 93)
-            canvas.drawLine(x(index), y(candle.high), x(index), y(candle.low), candlePaint)
-            canvas.drawLine(x(index), y(candle.open), x(index) + scaleX * .65f, y(candle.open), candlePaint)
-            canvas.drawLine(x(index), y(candle.close), x(index) + scaleX * .65f, y(candle.close), candlePaint)
+            val candleColor = if (candle.close >= candle.open) Color.rgb(75, 174, 156) else Color.rgb(221, 93, 93)
+            wickPaint.color = candleColor
+            bodyPaint.color = candleColor
+            canvas.drawLine(x(index), y(candle.high), x(index), y(candle.low), wickPaint)
+            val bodyTop = y(maxOf(candle.open, candle.close))
+            val bodyBottom = y(minOf(candle.open, candle.close))
+            val readableTop = minOf(bodyTop, bodyBottom - 3f)
+            canvas.drawRect(x(index) - bodyWidth / 2f, readableTop, x(index) + bodyWidth / 2f, bodyBottom, bodyPaint)
         }
         val current = market.candles.last().close
         val currentY = y(current)
