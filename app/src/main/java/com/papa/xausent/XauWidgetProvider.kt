@@ -85,7 +85,7 @@ class XauWidgetProvider : AppWidgetProvider() {
                 rv.setOnClickPendingIntent(R.id.chart_5m, chartIntent(context, ACTION_5M))
                 rv.setOnClickPendingIntent(R.id.chart_15m, chartIntent(context, ACTION_15M))
                 rv.setTextViewText(R.id.chart_label, "GRAFICO $timeframe")
-                rv.setImageViewBitmap(R.id.chart, XauChartRenderer.render(d?.markets?.get(timeframe) ?: d?.market))
+                rv.setImageViewBitmap(R.id.chart, XauChartRenderer.render(d?.markets?.get(timeframe) ?: d?.market, timeframe))
 
                 if (d != null) {
                     val ffNow = d.forexFactory5m
@@ -128,9 +128,17 @@ class XauWidgetProvider : AppWidgetProvider() {
         private fun setSelectedTimeframe(context: Context, value: String) { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(TIMEFRAME, value).apply() }
         private fun chartIntent(context: Context, action: String): PendingIntent = PendingIntent.getBroadcast(context, action.hashCode(), Intent(context, XauWidgetProvider::class.java).apply { this.action = action }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         private fun fmtGap(gap: PriceGap?): String = gap?.let { "${fmt(it.low)}–${fmt(it.high)}" } ?: "--"
-        private fun ageMinutes(epochMs: Long?): String = epochMs?.let {
-            "${((System.currentTimeMillis() - it).coerceAtLeast(0L) / 60_000L)}m fa"
-        } ?: "--"
+        private fun ageMinutes(epochMs: Long?): String {
+            if (epochMs == null) return "--"
+            val age = (System.currentTimeMillis() - epochMs).coerceAtLeast(0L)
+            val minutes = age / 60_000L
+            return when {
+                minutes < 60L -> "${minutes}m fa"
+                minutes < 24L * 60L -> "${minutes / 60L}h fa"
+                minutes <= 7L * 24L * 60L -> "${minutes / (24L * 60L)}g fa"
+                else -> "--"
+            }
+        }
 
         private fun formatAi(insight: AiInsight): String = if (!insight.available) {
             "LETTURA AI: non disponibile"

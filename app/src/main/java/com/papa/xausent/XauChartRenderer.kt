@@ -8,7 +8,7 @@ import android.graphics.Paint
 import java.util.Locale
 
 object XauChartRenderer {
-    fun render(market: MarketAnalysis?): Bitmap {
+    fun render(market: MarketAnalysis?, timeframe: String = "5m"): Bitmap {
         val width = 900; val height = 700
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -20,7 +20,7 @@ object XauChartRenderer {
         for (index in 0..6) canvas.drawLine(left, top + (bottom - top) * index / 6f, plotRight, top + (bottom - top) * index / 6f, grid)
         for (index in 0..8) canvas.drawLine(left + (plotRight - left) * index / 8f, top, left + (plotRight - left) * index / 8f, bottom, grid)
         if (market == null) {
-            canvas.drawText("feed 5m non disponibile", left, 210f, label)
+            canvas.drawText("feed $timeframe non disponibile", left, 210f, label)
             return bitmap
         }
         val min = market.candles.minOf { it.low }
@@ -79,7 +79,7 @@ object XauChartRenderer {
         val labelTop = (currentY - 17f).coerceIn(top, bottom - 30f)
         canvas.drawRoundRect(scaleLeft - 6f, labelTop, scaleRight, labelTop + 28f, 4f, 4f, currentBackground)
         canvas.drawText(price(current), scaleRight - 8f, labelTop + 21f, currentLabel)
-        canvas.drawText("5m • BiQuote", 44f, 22f, label)
+        canvas.drawText("$timeframe • BiQuote", 44f, 22f, label)
         return bitmap
     }
 }
