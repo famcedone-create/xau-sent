@@ -10,6 +10,8 @@ class XauRefreshWorker(appContext: Context, params: WorkerParameters) : Coroutin
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
             val manual = inputData.getBoolean("manual_refresh", false)
+            RemoteConfigClient.refresh(applicationContext)
+            val previous = XauStore.load(applicationContext)
             val flow = try {
                 ForexFactoryClient.fetch()
             } catch (_: Throwable) {
@@ -38,7 +40,16 @@ class XauRefreshWorker(appContext: Context, params: WorkerParameters) : Coroutin
                 flowX5m = xWindows.five,
                 flowX10m = xWindows.tenSummary
             )
-            val withAi = if (manual) current.copy(aiInsight = AiInsightClient.fetch(applicationContext, current)) else current.copy(aiInsight = AiInsight())
+            val withAi = if (manual) {
+                val newAi = AiInsightClient.fetch(applicationContext, current)
+                if (newAi.available) {
+                    current.copy(aiInsight = newAi)
+                } else {
+                    current.copy(aiInsight = previous?.aiInsight ?: AiInsight())
+                }
+            } else {
+                current.copy(aiInsight = previous?.aiInsight ?: AiInsight())
+            }
             XauStore.save(applicationContext, withAi)
             XauWidgetProvider.updateAll(applicationContext)
             Result.success()
