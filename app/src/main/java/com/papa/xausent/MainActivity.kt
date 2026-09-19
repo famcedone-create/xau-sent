@@ -23,11 +23,13 @@ class MainActivity : Activity() {
         XauWidgetProvider.schedule(this)
 
         val status = findViewById<TextView>(R.id.status)
+        val diagnostics = findViewById<TextView>(R.id.diagnostics)
         val button = findViewById<Button>(R.id.buttonRefresh)
         watchlistContainer = findViewById(R.id.xWatchlistContainer)
         watchlistTitle = findViewById(R.id.xWatchlistTitle)
         newHandleField = findViewById(R.id.xNewHandle)
         renderWatchlist()
+        renderDiagnostics(diagnostics)
         findViewById<Button>(R.id.buttonAddXAccount).setOnClickListener {
             val normalized = XWatchlistStore.normalize(listOf(newHandleField.text.toString())).firstOrNull()
             if (normalized == null) status.text = "Handle non valido. Usa solo lettere, numeri e underscore."
@@ -59,7 +61,10 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        if (::watchlistContainer.isInitialized) renderWatchlist()
+        if (::watchlistContainer.isInitialized) {
+            renderWatchlist()
+            renderDiagnostics(findViewById(R.id.diagnostics))
+        }
     }
 
     private fun renderWatchlist() {
@@ -109,6 +114,29 @@ class MainActivity : Activity() {
         XWatchlistStore.saveAvailable(this, available)
         XWatchlistStore.saveActive(this, selected)
         watchlistTitle.text = "ACCOUNT X MONITORATI (${selected.size}/${XWatchlistStore.MAX_ACCOUNTS})"
+    }
+
+    private fun renderDiagnostics(view: TextView) {
+        val data = XauStore.load(this)
+        if (data == null) {
+            view.text = "Diagnostica feed: --"
+            return
+        }
+        val x = data.flowX
+        val statuses = x.accountStatuses.entries.joinToString(", ") { "${it.key}: ${it.value}" }
+        val stats = x.accountStats.entries.joinToString("\n") { (handle, value) ->
+            "$handle: ${value.status} • BUY ${value.buySignals} • SELL ${value.sellSignals}"
+        }
+        view.text = "FF 5m: ${flowText(data.forexFactory5m)}\n" +
+            "FF 10m: ${flowText(data.forexFactory10m)}\n" +
+            "X feed: account OK ${x.accountsOk}/${x.accountsConfigured} • timeline OK ${x.timelinesOk}/${x.accountsConfigured}\n" +
+            "Account X: $statuses\n$stats"
+    }
+
+    private fun flowText(flow: FlowSummary): String = if (flow.status == "nessun dato") {
+        "nessun dato"
+    } else {
+        "BUY ${flow.buyPct}% | SELL ${flow.sellPct}% • ${flow.sample}"
     }
 
     private data class AccountRow(val handle: String, val check: CheckBox)

@@ -25,6 +25,15 @@
             android:textSize="17sp"
             android:textColor="#333333" />
 
+        <TextView
+            android:id="@+id/diagnostics"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Diagnostica feed: --"
+            android:textSize="13sp"
+            android:textColor="#555555" />
+
         <Button
             android:id="@+id/buttonRefresh"
             android:layout_width="match_parent"

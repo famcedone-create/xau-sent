@@ -35,7 +35,7 @@
         android:id="@+id/sentiment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="FLOW BUY --% | SELL --%"
+        android:text="FF 5m: BUY --% | SELL --%"
         android:textColor="@color/text_main"
         android:textStyle="bold"
         android:textSize="15sp" />
@@ -45,68 +45,27 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:text="Entrate BUY -- | SELL --"
+        android:text="FF 10m: BUY --% | SELL --%"
         android:textColor="@color/text_main"
         android:textSize="12sp" />
-
-    <TextView
-        android:id="@+id/flow"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:text="FLOW TRADER 10m: --"
-        android:textColor="@color/text_main"
-        android:textSize="11sp" />
 
     <TextView
         android:id="@+id/flow_x"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="3dp"
-        android:text="FLOW X 10m: non disponibile"
+        android:text="X 5m: BUY --% | SELL --%"
         android:textColor="@color/text_main"
         android:textStyle="bold"
-        android:textSize="11sp" />
-
-    <TextView
-        android:id="@+id/flow_x_entries"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="X Entrate: BUY 0 | SELL 0"
-        android:textColor="@color/text_muted"
-        android:textSize="11sp" />
-
-    <TextView
-        android:id="@+id/flow_x_sample"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Campione X: campione basso"
-        android:textColor="@color/text_muted"
         android:textSize="11sp" />
 
     <TextView
         android:id="@+id/flow_x_10"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="X 10m: nessun dato"
+        android:text="X 10m: BUY --% | SELL --%"
         android:textColor="@color/text_muted"
         android:textSize="11sp" />
-
-    <TextView
-        android:id="@+id/flow_x_diagnostic"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="X feed: account OK 0/20 • timeline OK 0/20"
-        android:textColor="@color/text_muted"
-        android:textSize="10sp" />
-
-    <TextView
-        android:id="@+id/flow_x_last"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="ultimo post XAU trovato: --"
-        android:textColor="@color/text_muted"
-        android:textSize="10sp" />
 
     <TextView
         android:id="@+id/trend"
@@ -179,18 +138,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="3dp"
-        android:text="FVG SELL: --&#10;FVG BUY: --"
+        android:text="FVG BUY: --  •  SELL: --"
         android:textColor="@color/text_main"
         android:textSize="12sp" />
-
-    <TextView
-        android:id="@+id/updated"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:text="Agg.: --  •  FLOW TRADER 10m"
-        android:textColor="@color/text_muted"
-        android:textSize="11sp" />
 
     <TextView
         android:id="@+id/ai_insight"

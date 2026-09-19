@@ -13,8 +13,6 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -90,32 +88,17 @@ class XauWidgetProvider : AppWidgetProvider() {
                 if (d != null) {
                     val ffNow = d.forexFactory5m
                     val ffTen = d.forexFactory10m
-                    rv.setTextViewText(R.id.sentiment, "FF NOW 5m: ${flowPercent(ffNow)}")
+                    rv.setTextViewText(R.id.sentiment, "FF 5m: ${flowPercent(ffNow)}")
                     rv.setTextViewText(R.id.entries, "FF 10m: ${flowPercent(ffTen)}")
-                    rv.setTextViewText(R.id.flow, "FLOW TRADER 10m: ${flowEntries(ffTen)} • ${ffTen.sample}")
-                    val x = d.flowX
                     val xNow = d.flowX5m
-                    val xStatus = when (xNow.status) {
-                        "attivo" -> "X NOW 5m: BUY ${xNow.buyPct}% | SELL ${xNow.sellPct}%"
-                        "nessun dato" -> "X NOW 5m: nessun dato"
-                        else -> "FLOW X 10m: non disponibile"
-                    }
-                    rv.setTextViewText(R.id.flow_x, xStatus)
-                    rv.setTextViewText(R.id.flow_x_entries, "X Entrate 5m: BUY ${xNow.buyEntries} | SELL ${xNow.sellEntries}")
-                    rv.setTextViewText(R.id.flow_x_sample, "Campione X 5m: ${xNow.sample}")
-                    rv.setTextViewText(R.id.flow_x_10, "X 10m: ${flowPercent(d.flowX10m)} • ${d.flowX10m.sample}")
-                    rv.setTextViewText(R.id.flow_x_diagnostic, "X feed: account OK ${x.accountsOk}/${x.accountsConfigured} • timeline OK ${x.timelinesOk}/${x.accountsConfigured}")
-                    rv.setTextViewText(R.id.flow_x_last, "ultimo post XAU trovato: ${ageMinutes(x.lastXauPostEpochMs)}")
+                    rv.setTextViewText(R.id.flow_x, "X 5m: ${flowPercent(xNow)}")
+                    rv.setTextViewText(R.id.flow_x_10, "X 10m: ${flowPercent(d.flowX10m)}")
                     val market = d.market
                     rv.setTextViewText(R.id.trend, "TREND 5m: ${market?.trend ?: "--"}")
                     rv.setTextViewText(R.id.status, "STATO: ${market?.state ?: d.feedStatus}")
                     rv.setTextViewText(R.id.levels, "Resistenza 1: ${fmt(market?.resistance1)}  |  Supporto 1: ${fmt(market?.support1)}")
-                    rv.setTextViewText(R.id.fvg, "FVG SELL: ${fmtGap(market?.bearishFvgs?.lastOrNull())}\nFVG BUY: ${fmtGap(market?.bullishFvgs?.lastOrNull())}")
+                    rv.setTextViewText(R.id.fvg, "FVG BUY: ${fmtGap(market?.bullishFvgs?.lastOrNull())}  •  SELL: ${fmtGap(market?.bearishFvgs?.lastOrNull())}")
                     rv.setTextViewText(R.id.ai_insight, formatAi(d.aiInsight))
-                    val sdf = SimpleDateFormat("HH:mm", Locale.ITALY)
-                    rv.setTextViewText(R.id.updated, "Agg.: ${sdf.format(Date(d.updatedEpochMs))}  • FLOW TRADER 10m${if (loading) "  • aggiornamento..." else ""}")
-                } else {
-                    rv.setTextViewText(R.id.updated, if (error) "Errore dati • tocca ↻" else "Tocca ↻ per aggiornare")
                 }
                 manager.updateAppWidget(id, rv)
             }
@@ -123,27 +106,14 @@ class XauWidgetProvider : AppWidgetProvider() {
 
         private fun fmt(value: Double?): String = value?.let { "%.2f".format(Locale.ITALY, it) } ?: "--"
         private fun flowPercent(flow: FlowSummary): String = if (flow.status == "nessun dato") "nessun dato" else "BUY ${flow.buyPct}% | SELL ${flow.sellPct}%"
-        private fun flowEntries(flow: FlowSummary): String = if (flow.status == "nessun dato") "nessun dato" else "BUY ${flow.buyEntries} | SELL ${flow.sellEntries}"
         private fun selectedTimeframe(context: Context): String = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(TIMEFRAME, "5m") ?: "5m"
         private fun setSelectedTimeframe(context: Context, value: String) { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(TIMEFRAME, value).apply() }
         private fun chartIntent(context: Context, action: String): PendingIntent = PendingIntent.getBroadcast(context, action.hashCode(), Intent(context, XauWidgetProvider::class.java).apply { this.action = action }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         private fun fmtGap(gap: PriceGap?): String = gap?.let { "${fmt(it.low)}–${fmt(it.high)}" } ?: "--"
-        private fun ageMinutes(epochMs: Long?): String {
-            if (epochMs == null) return "--"
-            val age = (System.currentTimeMillis() - epochMs).coerceAtLeast(0L)
-            val minutes = age / 60_000L
-            return when {
-                minutes < 60L -> "${minutes}m fa"
-                minutes < 24L * 60L -> "${minutes / 60L}h fa"
-                minutes <= 7L * 24L * 60L -> "${minutes / (24L * 60L)}g fa"
-                else -> "--"
-            }
-        }
-
         private fun formatAi(insight: AiInsight): String = if (!insight.available) {
             "LETTURA AI: non disponibile"
         } else {
-            "LETTURA AI\nSTRUTTURA: ${insight.structure}\nNOW: ${insight.now}\nFLOW: ${insight.flow}\nLETTURA: ${insight.reading}\nCONF: ${insight.confidence}%"
+            "LETTURA AI\nCONF ${insight.confidence}%\n15m ${insight.structure} • 5m ${insight.structure} • 1m ${insight.structure}\nNOW: ${insight.now}\nFLOW: ${insight.flow}\nLETTURA: ${insight.reading}"
         }
     }
 }
