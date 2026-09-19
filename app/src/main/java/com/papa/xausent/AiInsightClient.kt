@@ -46,10 +46,38 @@ object AiInsightClient {
             connection.outputStream.use { it.write(body) }
             when (val responseCode = connection.responseCode) {
                 in 200..299 -> parseResponse(connection.inputStream.bufferedReader().use { it.readText() })
-                in 301..308 -> {
+                in 301..303, in 307..308 -> {
                     val location = connection.getHeaderField("Location") ?: return AiInsight()
                     val next = URI(endpoint).resolve(location).toString()
-                    if (!next.startsWith("https://")) AiInsight() else postJson(next, body, redirectCount + 1)
+                    if (!next.startsWith("https://")) return AiInsight()
+                    if (responseCode in 301..303) getJson(next, redirectCount + 1)
+                    else postJson(next, body, redirectCount + 1)
+                }
+                else -> AiInsight()
+            }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun getJson(endpoint: String, redirectCount: Int): AiInsight {
+        if (redirectCount > MAX_REDIRECTS) return AiInsight()
+        val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+            instanceFollowRedirects = false
+            requestMethod = "GET"
+            connectTimeout = 10000
+            readTimeout = 15000
+            setRequestProperty("Accept", "application/json")
+        }
+        return try {
+            when (val responseCode = connection.responseCode) {
+                in 200..299 -> parseResponse(connection.inputStream.bufferedReader().use { it.readText() })
+                in 301..303, in 307..308 -> {
+                    val location = connection.getHeaderField("Location") ?: return AiInsight()
+                    val next = URI(endpoint).resolve(location).toString()
+                    if (!next.startsWith("https://")) return AiInsight()
+                    if (responseCode in 301..303) getJson(next, redirectCount + 1)
+                    else AiInsight()
                 }
                 else -> AiInsight()
             }
