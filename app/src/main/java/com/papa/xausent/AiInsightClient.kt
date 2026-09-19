@@ -4,11 +4,14 @@ import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
+import java.net.URI
 import java.net.URL
 
 object AiInsightClient {
     private const val PREFS = "xau_sent_ai"
     private const val ENDPOINT_KEY = "backend_endpoint"
+    private const val DEFAULT_ENDPOINT = "https://script.google.com/macros/s/AKfycbwrQFQBGwt_E_i7Ey89ZsxylZx9Cjs4lKDpQxJbWzfdo0zFtOkI6se7z_7q7BzI_PHdWQ/exec"
+    private const val MAX_REDIRECTS = 4
 
     fun configureBackend(context: Context, endpoint: String) {
         val normalized = endpoint.trim()
@@ -19,26 +22,39 @@ object AiInsightClient {
 
     fun fetch(context: Context, data: XauData): AiInsight {
         val endpoint = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(ENDPOINT_KEY, "").orEmpty()
+            .getString(ENDPOINT_KEY, null)?.trim()?.takeIf { it.isNotEmpty() } ?: DEFAULT_ENDPOINT
         if (!endpoint.startsWith("https://")) return AiInsight()
         return try {
-            val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
-                requestMethod = "POST"
-                connectTimeout = 10000
-                readTimeout = 15000
-                doOutput = true
-                setRequestProperty("Accept", "application/json")
-                setRequestProperty("Content-Type", "application/json")
-            }
-            try {
-                connection.outputStream.use { it.write(payload(data).toString().toByteArray(Charsets.UTF_8)) }
-                if (connection.responseCode !in 200..299) return AiInsight()
-                parseResponse(connection.inputStream.bufferedReader().use { it.readText() })
-            } finally {
-                connection.disconnect()
-            }
+            postJson(endpoint, payload(data).toString().toByteArray(Charsets.UTF_8), 0)
         } catch (_: Throwable) {
             AiInsight()
+        }
+    }
+
+    private fun postJson(endpoint: String, body: ByteArray, redirectCount: Int): AiInsight {
+        if (redirectCount > MAX_REDIRECTS) return AiInsight()
+        val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+            instanceFollowRedirects = false
+            requestMethod = "POST"
+            connectTimeout = 10000
+            readTimeout = 15000
+            doOutput = true
+            setRequestProperty("Accept", "application/json")
+            setRequestProperty("Content-Type", "application/json")
+        }
+        return try {
+            connection.outputStream.use { it.write(body) }
+            when (val responseCode = connection.responseCode) {
+                in 200..299 -> parseResponse(connection.inputStream.bufferedReader().use { it.readText() })
+                in 301..308 -> {
+                    val location = connection.getHeaderField("Location") ?: return AiInsight()
+                    val next = URI(endpoint).resolve(location).toString()
+                    if (!next.startsWith("https://")) AiInsight() else postJson(next, body, redirectCount + 1)
+                }
+                else -> AiInsight()
+            }
+        } finally {
+            connection.disconnect()
         }
     }
 
