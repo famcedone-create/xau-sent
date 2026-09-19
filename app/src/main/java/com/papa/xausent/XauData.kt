@@ -35,7 +35,8 @@ data class FlowSummary(
 data class AiInsight(
     val available: Boolean = false,
     val structure: String = "...",
-    val now: String = "...",
+    val pattern: String = "...",
+    val scalp: String = "...",
     val flow: String = "...",
     val reading: String = "...",
     val confidence: Int = 0

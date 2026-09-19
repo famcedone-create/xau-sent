@@ -95,7 +95,7 @@ object XauStore {
     }
 
     private fun aiToJson(insight: AiInsight) = JSONObject().apply {
-        put("available", insight.available); put("structure", insight.structure); put("now", insight.now)
+        put("available", insight.available); put("structure", insight.structure); put("pattern", insight.pattern); put("scalp", insight.scalp)
         put("flow", insight.flow); put("reading", insight.reading); put("confidence", insight.confidence)
     }
 
@@ -130,7 +130,7 @@ object XauStore {
         val ai = json.optJSONObject("aiInsight") ?: return AiInsight()
         return AiInsight(
             available = ai.optBoolean("available", false),
-            structure = ai.optString("structure", "..."), now = ai.optString("now", "..."),
+            structure = ai.optString("structure", "..."), pattern = ai.optString("pattern", "..."), scalp = ai.optString("scalp", "..."),
             flow = ai.optString("flow", "..."), reading = ai.optString("reading", "..."),
             confidence = ai.optInt("confidence", 0).coerceIn(0, 100)
         )

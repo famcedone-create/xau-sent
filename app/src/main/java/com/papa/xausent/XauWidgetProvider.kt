@@ -113,7 +113,7 @@ class XauWidgetProvider : AppWidgetProvider() {
         private fun formatAi(insight: AiInsight): String = if (!insight.available) {
             "LETTURA AI: non disponibile"
         } else {
-            "LETTURA AI\nCONF ${insight.confidence}%\n15m ${insight.structure} • 5m ${insight.structure} • 1m ${insight.structure}\nNOW: ${insight.now}\nFLOW: ${insight.flow}\nLETTURA: ${insight.reading}"
+            "AI PRICE ACTION • CONF ${insight.confidence}%\nSTRUTTURA: ${insight.structure}\nPATTERN: ${insight.pattern}\nSCALP NOW: ${insight.scalp}\nLETTURA: ${insight.reading}\nFLOW: ${insight.flow}"
         }
     }
 }
