@@ -3,7 +3,6 @@ package com.papa.xausent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.DashPathEffect
 import android.graphics.Paint
 import java.util.Locale
 
@@ -23,16 +22,18 @@ object XauChartRenderer {
             canvas.drawText("feed $timeframe non disponibile", left, 210f, label)
             return bitmap
         }
-        val min = market.candles.minOf { it.low }
-        val max = market.candles.maxOf { it.high }
+        val visibleCandles = market.candles.takeLast(70)
+        val candleOffset = market.candles.size - visibleCandles.size
+        val min = visibleCandles.minOf { it.low }
+        val max = visibleCandles.maxOf { it.high }
         val range = (max - min).coerceAtLeast(0.01)
-        val scaleX = (plotRight - left) / market.candles.lastIndex.coerceAtLeast(1)
+        val scaleX = (plotRight - left) / visibleCandles.lastIndex.coerceAtLeast(1)
         fun y(value: Double) = bottom - ((value - min) / (max - min).coerceAtLeast(0.01) * (bottom - top)).toFloat()
-        fun x(index: Int) = left + index.coerceIn(0, market.candles.lastIndex) * scaleX
+        fun x(index: Int) = left + index.coerceIn(0, visibleCandles.lastIndex) * scaleX
         fun price(value: Double) = String.format(Locale.US, "%.2f", value)
         val scaleLabel = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.rgb(200, 211, 213)
-            textSize = 20f
+            textSize = 24f
             textAlign = Paint.Align.RIGHT
         }
         val scaleLine = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(65, 76, 81); strokeWidth = 1f }
@@ -42,10 +43,21 @@ object XauChartRenderer {
             canvas.drawLine(scaleLeft, tickY, scaleRight, tickY, scaleLine)
             canvas.drawText(price(value), scaleRight, tickY + 7f, scaleLabel)
         }
-        val fvgBull = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(80, 47, 167, 216) }
-        val fvgBear = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(80, 108, 142, 217) }
-        market.bullishFvgs.forEach { canvas.drawRect(x(it.startIndex), y(it.high), x(it.endIndex), y(it.low), fvgBull) }
-        market.bearishFvgs.forEach { canvas.drawRect(x(it.startIndex), y(it.high), x(it.endIndex), y(it.low), fvgBear) }
+        val fvgBull = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(105, 56, 196, 210) }
+        val fvgBear = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(105, 145, 153, 224) }
+        fun drawFvg(gap: PriceGap, paint: Paint) {
+            val start = gap.startIndex - candleOffset
+            val end = gap.endIndex - candleOffset
+            if (end >= 0 && start <= visibleCandles.lastIndex) {
+                canvas.drawRoundRect(
+                    x(start.coerceAtLeast(0)), y(gap.high),
+                    x(end.coerceAtMost(visibleCandles.lastIndex)), y(gap.low),
+                    2f, 2f, paint
+                )
+            }
+        }
+        market.bullishFvgs.forEach { drawFvg(it, fvgBull) }
+        market.bearishFvgs.forEach { drawFvg(it, fvgBear) }
         val fib = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeWidth = 2f; color = Color.argb(150, 238, 190, 93) }
         market.fibonacci.forEachIndexed { index, value ->
             canvas.drawLine(left, y(value), plotRight - 8f, y(value), fib)
@@ -53,12 +65,15 @@ object XauChartRenderer {
         }
         val upper = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(241, 126, 82); strokeWidth = 4f }
         val lower = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(75, 174, 156); strokeWidth = 4f }
-        canvas.drawLine(x(0), y(market.upperTrendline.first), x(market.candles.lastIndex), y(market.upperTrendline.second), upper)
-        canvas.drawLine(x(0), y(market.lowerTrendline.first), x(market.candles.lastIndex), y(market.lowerTrendline.second), lower)
+        val trendlineOffset = candleOffset.toDouble() / market.candles.lastIndex.coerceAtLeast(1)
+        val upperStart = market.upperTrendline.first + (market.upperTrendline.second - market.upperTrendline.first) * trendlineOffset
+        val lowerStart = market.lowerTrendline.first + (market.lowerTrendline.second - market.lowerTrendline.first) * trendlineOffset
+        canvas.drawLine(x(0), y(upperStart), x(visibleCandles.lastIndex), y(market.upperTrendline.second), upper)
+        canvas.drawLine(x(0), y(lowerStart), x(visibleCandles.lastIndex), y(market.lowerTrendline.second), lower)
         val wickPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeWidth = 2f }
         val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
         val bodyWidth = (scaleX * .62f).coerceIn(7f, 18f)
-        market.candles.forEachIndexed { index, candle ->
+        visibleCandles.forEachIndexed { index, candle ->
             val candleColor = if (candle.close >= candle.open) Color.rgb(75, 174, 156) else Color.rgb(221, 93, 93)
             wickPaint.color = candleColor
             bodyPaint.color = candleColor
@@ -66,14 +81,13 @@ object XauChartRenderer {
             val bodyTop = y(maxOf(candle.open, candle.close))
             val bodyBottom = y(minOf(candle.open, candle.close))
             val readableTop = minOf(bodyTop, bodyBottom - 3f)
-            canvas.drawRect(x(index) - bodyWidth / 2f, readableTop, x(index) + bodyWidth / 2f, bodyBottom, bodyPaint)
+            canvas.drawRoundRect(x(index) - bodyWidth / 2f, readableTop, x(index) + bodyWidth / 2f, bodyBottom, 2f, 2f, bodyPaint)
         }
-        val current = market.candles.last().close
+        val current = visibleCandles.last().close
         val currentY = y(current)
         val currentLine = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.rgb(255, 232, 112)
-            strokeWidth = 3f
-            pathEffect = DashPathEffect(floatArrayOf(12f, 8f), 0f)
+            strokeWidth = 1.8f
         }
         canvas.drawLine(left, currentY, plotRight, currentY, currentLine)
         val currentLabel = Paint(Paint.ANTI_ALIAS_FLAG).apply {
